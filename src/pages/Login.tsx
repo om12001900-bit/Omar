@@ -5,6 +5,8 @@ import { auth } from '../lib/firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { Eye, Mail, Lock, LogIn, Chrome } from 'lucide-react';
 
+import { Logo } from '../components/Logo';
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,10 +40,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-dark flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#070708] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden" dir="rtl">
       {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-primary/5 blur-[150px] rounded-full" />
+      <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-primary/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-secondary/10 blur-[120px] rounded-full" />
       </div>
 
       <motion.div 
@@ -49,59 +52,71 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md relative z-10"
       >
-        <div className="text-center mb-10">
-          <div className="inline-flex w-16 h-16 glass rounded-2xl items-center justify-center mb-6 neon-glow border border-brand-primary/20">
-            <span className="text-brand-primary font-display font-bold text-3xl">O</span>
+        <div className="text-center mb-12">
+          <div className="inline-flex w-24 h-24 mb-6 hover:scale-110 transition-transform cursor-pointer">
+            <div className="w-full h-full flex items-center justify-center p-2">
+               <Logo className="scale-125" showText={false} />
+            </div>
           </div>
-          <h1 className="text-3xl font-display font-bold mb-2 tracking-tight">مرحباً بك في O.V.9</h1>
-          <p className="text-slate-400">قم بتسجيل الدخول للوصول إلى منصة الرؤية</p>
+          <h1 className="text-4xl font-display font-black mb-3 tracking-tighter uppercase leading-none">O.V.9<br/><span className="text-brand-primary">Platform</span></h1>
+          <p className="text-slate-500 font-medium tracking-wide">Strategic Management O.V.9 • Phase X</p>
         </div>
 
-        <div className="glass rounded-[2rem] p-8 md:p-10 border border-white/5">
+        <div className="glass rounded-[2rem] p-8 md:p-10 border border-white/5 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-l from-brand-primary to-brand-secondary"></div>
+
           <form onSubmit={handleEmailLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-slate-400 mr-1">البريد الإلكتروني</label>
-              <div className="relative">
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">البريد الإلكتروني</label>
+              <div className="relative group">
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-11 text-white focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary outline-none transition-all"
-                  placeholder="name@example.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-12 text-slate-100 placeholder:text-slate-700 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all group-hover:border-white/20"
+                  placeholder="admin@summit.sa"
                   required
                 />
-                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 transition-colors group-focus-within:text-brand-primary" size={18} />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2 text-slate-400 mr-1">كلمة المرور</label>
-              <div className="relative">
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest">كلمة المرور</label>
+                <button type="button" className="text-[10px] text-brand-primary hover:underline font-bold">نسيت كلمة المرور؟</button>
+              </div>
+              <div className="relative group">
                 <input 
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-11 text-white focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary outline-none transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-12 text-slate-100 placeholder:text-slate-700 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all group-hover:border-white/20"
                   placeholder="••••••••"
                   required
                 />
-                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 transition-colors group-focus-within:text-brand-primary" size={18} />
               </div>
             </div>
 
             {error && (
-              <p className="text-red-400 text-sm text-center bg-red-400/10 py-2 rounded-lg border border-red-400/20">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-red-400 text-xs font-bold text-center bg-red-400/10 py-3 rounded-xl border border-red-400/20"
+              >
                 {error}
-              </p>
+              </motion.div>
             )}
 
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-primary text-brand-dark font-bold py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 neon-glow disabled:opacity-50"
+              className="w-full bg-brand-primary text-brand-dark font-black py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 neon-glow disabled:opacity-50 group relative overflow-hidden"
             >
-              {loading ? 'جاري التحميل...' : 'تسجيل الدخول'}
-              <LogIn size={20} />
+              <span className="relative z-10">{loading ? 'جاري التحقق...' : 'دخول المنصة'}</span>
+              <LogIn size={20} className="relative z-10" />
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             </button>
           </form>
 
@@ -117,15 +132,15 @@ export default function Login() {
           <button 
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full glass border-white/5 py-3 rounded-xl hover:bg-white/5 transition-all flex items-center justify-center gap-3 font-medium"
+            className="w-full bg-white/[0.02] border border-white/5 py-3.5 rounded-xl hover:bg-white/[0.05] transition-all flex items-center justify-center gap-3 font-bold text-sm tracking-tight"
           >
             <Chrome size={20} className="text-brand-primary" />
-            المتابعة باستخدام جوجل
+            المتابعة عبر بريد Google المعتمد
           </button>
         </div>
 
-        <p className="text-center mt-8 text-white/40 text-sm">
-          ليس لديك حساب؟ <span className="text-brand-cyan cursor-pointer hover:underline">طلب وصول</span>
+        <p className="text-center mt-12 text-slate-600 text-[10px] font-black uppercase tracking-[0.2em]">
+          O.V.9 Control Systems • 2026
         </p>
       </motion.div>
     </div>

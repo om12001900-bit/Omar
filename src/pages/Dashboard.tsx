@@ -27,10 +27,13 @@ import Conferences from './views/Conferences';
 import Calendar from './views/Calendar';
 import Settings from './views/Settings';
 
+import { Logo } from '../components/Logo';
+
 export default function Dashboard() {
   const { profile, signOut } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const notifications = [
@@ -52,61 +55,71 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col h-screen bg-brand-dark text-white overflow-hidden" dir="rtl">
       {/* 1. Header Area (Strategic Control Center) */}
-      <header className="h-14 border-b border-white/5 flex items-center justify-between px-6 md:px-10 shrink-0 bg-[#020617] backdrop-blur-md relative z-50">
-        {/* Left Side: User Profile & Quick Actions */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#FF6B00] rounded-none flex items-center justify-center font-black text-xl text-white shadow-lg">
+      <header className="h-16 md:h-20 border-b border-white/5 flex items-center justify-between px-4 md:px-10 shrink-0 bg-[#020617]/80 backdrop-blur-xl relative z-50">
+        {/* Left Side: Mobile Menu Toggle & User Profile */}
+        <div className="flex items-center gap-3 md:gap-4">
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-400"
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-xl flex items-center justify-center font-black text-lg md:text-2xl text-brand-dark shadow-2xl relative overflow-hidden group">
               {profile?.photoURL ? (
                 <img src={profile.photoURL} alt="User" className="w-full h-full object-cover" />
               ) : (
-                profile?.displayName?.charAt(0) || 'O'
+                <span className="relative z-10">{profile?.displayName?.charAt(0) || 'O'}</span>
               )}
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-black text-slate-100 leading-tight">{profile?.displayName || 'Omar Apps'}</span>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-black text-slate-100 leading-tight">{profile?.displayName || 'Strategic User'}</span>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] text-slate-500 font-bold">{profile?.email || 'oapps703@gmail.com'}</span>
-                <span className="text-[9px] text-brand-primary font-black uppercase tracking-wider">STRATEGIC DIRECTOR</span>
+                <span className="text-[10px] text-brand-primary font-black uppercase tracking-wider">STRATEGIC DIRECTOR</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mr-4 border-r border-white/10 pr-4">
+          <div className="hidden md:flex items-center gap-2 mr-4 border-r border-white/10 pr-4">
             <button 
               onClick={() => confirm('هل تريد تسجيل الخروج؟') && signOut()}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/5 transition-all text-slate-400"
+              className="w-9 h-9 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all text-slate-500"
               title="تسجيل الخروج"
             >
-              <LogOut size={16} />
+              <LogOut size={18} />
             </button>
             
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative w-8 h-8 flex items-center justify-center hover:bg-white/5 transition-all text-slate-400 group"
+              className="relative w-9 h-9 flex items-center justify-center hover:bg-white/5 rounded-lg transition-all text-slate-500 group"
             >
-              <Bell size={16} className="group-hover:text-brand-primary transition-colors" />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-brand-primary rounded-full ring-2 ring-brand-dark" />
+              <Bell size={18} className="group-hover:text-brand-primary transition-colors" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-brand-primary rounded-full ring-2 ring-[#020617]" />
             </button>
           </div>
         </div>
 
         {/* Right Side: Platform Branding */}
-        <div className="flex items-center gap-3 text-left">
+        <div className="flex items-center gap-2 md:gap-4 text-left">
           <div className="flex flex-col items-end">
-            <span className="text-base font-display font-black tracking-tighter text-slate-100">O.V.9 Control Tracker</span>
-            <span className="text-[9px] text-brand-primary font-black uppercase tracking-[0.2em]">STRATEGIC PLATFORM V9.0</span>
+            <span className="text-lg md:text-2xl font-display font-black tracking-tighter text-white leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">O.V.9 Control</span>
+            <span className="text-[10px] md:text-xs text-brand-primary font-black uppercase tracking-[0.3em] mt-1">Strategic Platform</span>
           </div>
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className="w-10 h-10 bg-brand-primary rounded-none flex items-center justify-center font-black text-xl text-brand-dark shadow-[0_0_15px_rgba(74,222,128,0.3)] relative group"
+            className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center relative group cursor-pointer"
           >
             <motion.div 
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0, 0.3] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute inset-0 bg-brand-primary/20 rounded-none"
+              animate={{ scale: [1, 1.1, 1], opacity: [1, 0.8, 1] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-0 bg-brand-primary/10 rounded-2xl blur-xl group-hover:bg-brand-primary/20 transition-all"
             />
-            <span className="relative z-10">O</span>
+            <div className="relative w-full h-full bg-[#0a0a0b] border border-white/10 rounded-2xl flex items-center justify-center neon-glow-brand group-hover:border-brand-primary/50 transition-all overflow-hidden shadow-2xl">
+              <Logo className="scale-75" showText={false} />
+              <div className="absolute inset-0 bg-gradient-to-tr from-brand-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
           </motion.div>
         </div>
 
@@ -135,8 +148,73 @@ export default function Dashboard() {
         </AnimatePresence>
       </header>
 
-      {/* 2. Navigation Ribbon (Red Zone in user's logic) */}
-      <nav className="h-12 md:h-14 bg-white/[0.01] border-b border-red-500/10 flex items-center px-4 overflow-x-auto no-scrollbar shrink-0">
+      {/* 2. Navigation Area */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed inset-0 bg-[#020617] z-[60] flex flex-col p-8 md:hidden"
+          >
+            <div className="flex items-center justify-between mb-12">
+              <Logo className="scale-110" />
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-12 h-12 flex items-center justify-center bg-white/5 rounded-2xl text-slate-400"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 overflow-y-auto no-scrollbar">
+              {navItems.map((item) => {
+                const isActive = currentPath === item.path || (item.path !== '/dashboard' && currentPath.startsWith(item.path));
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 border ${
+                      isActive 
+                        ? 'bg-brand-primary/10 border-brand-primary/20 text-brand-primary' 
+                        : 'bg-white/[0.02] border-transparent text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className={`${isActive ? 'text-brand-primary' : 'text-slate-500'}`}>
+                      <item.icon size={22} />
+                    </div>
+                    <span className="font-bold text-base tracking-tight">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="mt-auto pt-8 border-t border-white/5 space-y-4">
+              <div className="flex items-center gap-4 p-4 glass rounded-2xl border border-white/5">
+                <div className="w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center font-black text-xl text-brand-dark">
+                  {profile?.displayName?.charAt(0) || 'U'}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-black text-white">{profile?.displayName}</p>
+                  <p className="text-[10px] text-slate-500 font-bold">{profile?.email}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => signOut()}
+                className="w-full p-5 flex items-center justify-center gap-3 bg-red-500/10 text-red-500 font-black rounded-2xl hover:bg-red-500/20 transition-all border border-red-500/20"
+              >
+                <LogOut size={20} />
+                <span>تسجيل الخروج</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Navigation Ribbon (Desktop only, or horizontal on mobile) */}
+      <nav className="hidden md:flex h-14 bg-white/[0.01] border-b border-red-500/10 items-center px-4 overflow-x-auto no-scrollbar shrink-0">
         <motion.div 
           initial="hidden"
           animate="visible"
@@ -149,7 +227,7 @@ export default function Dashboard() {
               }
             }
           }}
-          className="flex items-center gap-2 md:gap-4 mx-auto"
+          className="flex items-center gap-4 mx-auto"
         >
           {navItems.map((item) => {
             const isActive = currentPath === item.path || (item.path !== '/dashboard' && currentPath.startsWith(item.path));
@@ -163,25 +241,19 @@ export default function Dashboard() {
               >
                 <Link
                   to={item.path}
-                  className={`flex flex-col items-center justify-center px-3 md:px-6 py-1 transition-all relative group min-w-[60px] md:min-w-[80px] ${
+                  className={`flex items-center gap-3 px-6 py-2 transition-all relative group rounded-xl border ${
                     isActive 
-                      ? 'text-brand-primary' 
-                      : 'text-slate-500 hover:text-slate-300'
+                      ? 'text-brand-primary bg-brand-primary/10 border-brand-primary/20' 
+                      : 'text-slate-500 hover:text-slate-100 hover:bg-white/5 border-transparent'
                   }`}
-                  title={item.label}
                 >
-                  <motion.div 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`p-2 rounded-none transition-all duration-300 ${isActive ? 'bg-brand-primary/10 shadow-[0_0_20px_rgba(74,222,128,0.1)]' : 'group-hover:bg-white/5'}`}
-                  >
-                    <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                  </motion.div>
+                  <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                  <span className={`text-sm font-bold tracking-tight ${isActive ? 'text-white' : 'text-slate-500'}`}>{item.label}</span>
                   
                   {isActive && (
                     <motion.div 
                       layoutId="nav-indicator"
-                      className="absolute bottom-0 left-0 right-0 h-1 bg-brand-primary shadow-[0_0_10px_rgba(74,222,128,1)]"
+                      className="absolute -bottom-[1px] left-0 right-0 h-0.5 bg-brand-primary shadow-[0_0_10px_rgba(74,222,128,1)]"
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -193,7 +265,7 @@ export default function Dashboard() {
       </nav>
 
       {/* 3. Viewport Content (Purple Zone in user's logic) */}
-      <main className="flex-1 overflow-y-auto relative scroll-smooth bg-[#020617]/50 border-t border-purple-500/5">
+      <main className="flex-1 overflow-y-auto relative scroll-smooth bg-[#020617]/50 border-t border-purple-500/5 pb-20 md:pb-0">
         <div className="min-h-full">
           <AnimatePresence mode="wait">
             <motion.div
@@ -217,6 +289,46 @@ export default function Dashboard() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* 4. Mobile Bottom Navigation (Ease of access) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#020617]/95 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-2 z-[50]">
+        {[
+          { path: '/dashboard', label: 'المتابعة', icon: LayoutDashboard },
+          { path: '/dashboard/projects', label: 'المشاريع', icon: Briefcase },
+          { path: '/dashboard/goals', label: 'الأهداف', icon: Target },
+          { path: '/dashboard/calendar', label: 'التقويم', icon: CalendarIcon },
+        ].map((item) => {
+          const isActive = currentPath === item.path || (item.path !== '/dashboard' && currentPath.startsWith(item.path));
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex flex-col items-center justify-center gap-1 transition-all flex-1 py-1 ${
+                isActive ? 'text-brand-primary' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-brand-primary/10 shadow-[0_0_15px_rgba(74,222,128,0.15)]' : ''}`}
+              >
+                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+              </motion.div>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'opacity-100' : 'opacity-60'}`}>
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+        <button 
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-slate-500"
+        >
+          <div className="p-1.5 rounded-lg">
+            <Menu size={20} />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">المزيد</span>
+        </button>
+      </nav>
     </div>
   );
 }

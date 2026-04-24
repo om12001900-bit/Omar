@@ -130,23 +130,23 @@ export default function GoalsTargets() {
   };
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden text-right">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2 py-4 shrink-0">
-        <div className="text-right">
-          <h1 className="text-2xl md:text-3xl font-display font-black text-white tracking-tight">الأهداف والمستهدفات</h1>
-          <p className="text-slate-500 mt-1 font-medium text-sm">إدارة وتتبع تطلعات الرؤية الاستراتيجية بصورة تفاعلية</p>
+    <div className="h-full flex flex-col p-4 md:p-8 overflow-hidden text-right pb-24 md:pb-8">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-6 shrink-0 border-b border-white/5 mb-6">
+        <div className="text-right w-full md:w-auto">
+          <h1 className="text-3xl md:text-5xl font-display font-black text-white tracking-tighter leading-tight mb-2">الأهداف والمؤشرات</h1>
+          <p className="text-slate-500 font-bold text-sm md:text-base">إدارة وتتبع تطلعات الرؤية الاستراتيجية بصورة تفاعلية</p>
         </div>
         <button 
           onClick={() => {
             resetForm();
             setModalOpen(true);
           }}
-          className="w-full md:w-auto bg-brand-primary text-brand-dark font-black px-6 py-3 rounded-none flex items-center justify-center gap-3 hover:scale-[1.03] active:scale-95 shadow-lg shadow-brand-primary/10 transition-all group"
+          className="w-full md:w-auto bg-brand-primary text-brand-dark font-black px-8 py-4 rounded-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-brand-primary/20 transition-all group shrink-0"
         >
-          <span className="text-base">إضافة عنصر جديد</span>
-          <div className="w-8 h-8 rounded-none bg-brand-dark/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
-            <Plus size={18} strokeWidth={3} />
+          <div className="w-10 h-10 rounded-xl bg-brand-dark/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
+            <Plus size={20} strokeWidth={3} />
           </div>
+          <span className="text-base tracking-tight">إضافة هدف جديد</span>
         </button>
       </div>
 
@@ -158,104 +158,104 @@ export default function GoalsTargets() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="h-full grid grid-cols-1 lg:grid-cols-12 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-12 h-full gap-0 overflow-hidden"
             >
               {/* List Side */}
-              <div className="lg:col-span-3 h-full bg-white/[0.01] border-l border-white/5 p-5 flex flex-col min-h-0 transition-all">
-          <div className="flex items-center justify-between mb-6 px-2">
-            <h3 className="text-[10px] font-black uppercase text-slate-600 tracking-[0.4em]">دليل الأهداف</h3>
-            <span className="text-[10px] bg-white/5 px-4 py-1.5 rounded-none text-slate-500 font-black">{goals.length} عنصر</span>
-          </div>
+              <div className="lg:col-span-3 h-full bg-[#0a0a0b]/40 border-l border-white/5 p-6 flex flex-col min-h-0 transition-all rounded-3xl">
+                <div className="flex items-center justify-between mb-8 px-2">
+                  <h3 className="text-[10px] font-black uppercase text-slate-600 tracking-[0.4em]">دليل الأهداف</h3>
+                  <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                    <span className="text-[10px] text-slate-500 font-bold tracking-widest">{goals.length} عنصر</span>
+                  </div>
+                </div>
 
-          <div className="mb-4 px-1">
-             <div className="flex items-center bg-white/5 border border-white/5 px-4 py-2 hover:border-white/10 transition-all focus-within:border-brand-primary/30">
-                <Search size={14} className="text-slate-600" />
-                <input 
-                  type="text"
-                  placeholder="بحث في الأهداف والمؤشرات..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-transparent border-none outline-none text-xs text-slate-300 placeholder:text-slate-600 text-right w-full px-2"
-                />
-             </div>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto space-y-3 px-1 custom-scrollbar pb-6 relative">
-            {goals
-              .filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
-              .map((goal) => (
-              <div
-                key={goal.id}
-                onClick={() => {
-                  setSelectedGoal(goal);
-                  setEditData({
-                    name: goal.name,
-                    type: goal.type,
-                    startDate: goal.startDate,
-                    endDate: goal.endDate,
-                    hieaId: goal.hieaId || '',
-                    projectId: goal.projectId || '',
-                    category: goal.category,
-                    progress: goal.progress || 0,
-                    milestones: goal.milestones || [],
-                  });
-                  setIsEditing(false);
-                }}
-                className={`w-full text-right p-4 rounded-none transition-all border relative overflow-hidden group cursor-pointer ${
-                  selectedGoal?.id === goal.id 
-                  ? 'bg-white/[0.04] border-brand-primary/30 shadow-[0_20px_40px_-15px_rgba(74,222,128,0.15)]' 
-                  : 'bg-white/[0.02] border-transparent hover:border-white/5 grayscale-[0.5] hover:grayscale-0'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3 relative z-10">
-                   <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-none flex items-center justify-center transition-all ${
-                        goal.type === GoalType.OBJECTIVE ? 'bg-brand-primary/10 text-brand-primary' : 'bg-brand-secondary/10 text-brand-secondary'
-                      }`}>
-                        {goal.type === GoalType.OBJECTIVE ? <Target size={16} /> : <TrendingUp size={16} />}
+                <div className="mb-6 px-1">
+                   <div className="flex items-center bg-[#0a0a0b] border border-white/5 rounded-2xl px-5 py-3 hover:border-brand-primary/30 transition-all focus-within:ring-4 focus-within:ring-brand-primary/5">
+                      <Search size={16} className="text-slate-700" />
+                      <input 
+                        type="text"
+                        placeholder="بحث في المستهدفات..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-transparent border-none outline-none text-sm text-slate-300 placeholder:text-slate-700 text-right w-full px-3"
+                      />
+                   </div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto space-y-4 px-1 custom-scrollbar pb-10 relative">
+                  {goals
+                    .filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map((goal) => (
+                    <motion.div
+                      layout
+                      key={goal.id}
+                      onClick={() => {
+                        setSelectedGoal(goal);
+                        setEditData({
+                          name: goal.name,
+                          type: goal.type,
+                          startDate: goal.startDate,
+                          endDate: goal.endDate,
+                          hieaId: goal.hieaId || '',
+                          projectId: goal.projectId || '',
+                          category: goal.category,
+                          progress: goal.progress || 0,
+                          milestones: goal.milestones || [],
+                        });
+                        setIsEditing(false);
+                      }}
+                      className={`w-full text-right p-5 rounded-2xl transition-all border relative overflow-hidden group cursor-pointer ${
+                        selectedGoal?.id === goal.id 
+                        ? 'bg-brand-primary/10 border-brand-primary/30 shadow-2xl' 
+                        : 'bg-[#0a0a0b] border-white/5 hover:border-white/10 grayscale-[0.3] hover:grayscale-0'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-4 relative z-10">
+                         <div className="flex items-center gap-2">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                              goal.type === GoalType.OBJECTIVE ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20' : 'bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20'
+                            }`}>
+                              {goal.type === GoalType.OBJECTIVE ? <Target size={18} /> : <TrendingUp size={18} />}
+                            </div>
+                         </div>
+                         <div className="bg-white/5 px-2 py-1 rounded-lg">
+                            <span className="text-[10px] font-display font-black text-white/60 tracking-tight">{goal.progress}%</span>
+                         </div>
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${
-                        goal.type === GoalType.OBJECTIVE ? 'text-brand-primary' : 'text-brand-secondary'
-                      }`}>
-                         {goal.type === GoalType.OBJECTIVE ? 'هدف استراتيجي' : 'مستهدف رقمي'}
-                      </span>
-                   </div>
-                   <div className="flex flex-col items-end">
-                      <span className="text-[10px] font-display font-black text-white/40">{goal.progress}%</span>
-                   </div>
-                </div>
-                
-                <h4 className="text-base font-bold text-slate-100 line-clamp-2 mb-4 relative z-10 leading-snug">{goal.name}</h4>
-                
-                <div className="w-full h-1 bg-white/5 rounded-none overflow-hidden relative z-10">
-                  <div 
-                    className={`h-full rounded-none transition-all duration-1000 ${
-                      goal.type === GoalType.OBJECTIVE ? 'bg-brand-primary' : 'bg-brand-secondary'
-                    }`}
-                    style={{ width: `${goal.progress || 0}%` }}
-                  />
-                </div>
+                      
+                      <h4 className="text-base font-bold text-slate-100 line-clamp-2 mb-4 relative z-10 leading-snug">{goal.name}</h4>
+                      
+                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden relative z-10">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${goal.progress || 0}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className={`h-full rounded-full transition-all duration-1000 ${
+                            goal.type === GoalType.OBJECTIVE ? 'bg-brand-primary shadow-[0_0_10px_rgba(74,222,128,0.5)]' : 'bg-brand-secondary shadow-[0_0_10px_rgba(45,212,191,0.5)]'
+                          }`}
+                        />
+                      </div>
 
-                <button 
-                  onClick={(e) => openDeleteConfirm(e, goal)}
-                  className="absolute left-4 bottom-4 p-2 bg-red-500/5 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 border border-red-500/10 transition-all opacity-0 group-hover:opacity-100 z-20"
-                  title="حذف العنصر"
-                >
-                  <Trash2 size={12} />
-                </button>
+                      <button 
+                        onClick={(e) => openDeleteConfirm(e, goal)}
+                        className="absolute left-4 bottom-14 p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl border border-red-500/10 transition-all opacity-0 group-hover:opacity-100 z-20"
+                        title="حذف العنصر"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </motion.div>
+                  ))}
+                  {goals.length === 0 && (
+                    <div className="text-center py-32 text-slate-800">
+                      <Target size={64} className="mx-auto mb-6 opacity-5" />
+                      <p className="text-sm font-bold uppercase tracking-widest opacity-20">لم يتم تحديد أهداف بعد</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
-            {goals.length === 0 && (
-              <div className="text-center py-32 text-slate-800">
-                <Target size={64} className="mx-auto mb-6 opacity-5" />
-                <p className="text-sm font-bold uppercase tracking-widest opacity-20">لم يتم تحديد أهداف بعد</p>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Helper Board */}
-        <div className="hidden lg:flex lg:col-span-9 h-full flex flex-col items-center justify-center text-slate-800 p-8 text-center bg-transparent">
+              {/* Helper Board */}
+              <div className="hidden lg:flex lg:col-span-9 h-full flex flex-col items-center justify-center text-slate-800 p-8 text-center bg-transparent">
           <div className="relative mb-12">
              <div className="absolute inset-0 bg-brand-primary/10 blur-[120px] rounded-none animate-pulse" />
              <Target size={160} className="relative z-10 opacity-5" />
@@ -673,8 +673,8 @@ export default function GoalsTargets() {
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
-      </div>
+          </AnimatePresence>
+        </div>
 
       {/* Add Modal */}
       <Modal 

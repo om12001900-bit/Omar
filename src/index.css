@@ -65,7 +65,12 @@
 }
 
 .neon-glow {
-  box-shadow: 0 0 25px rgba(var(--brand-primary-rgb), 0.15);
+  box-shadow: 0 0 25px rgba(74, 222, 128, 0.15);
+}
+
+.neon-glow-brand {
+  box-shadow: 0 0 35px rgba(74, 222, 128, 0.25), 
+              0 0 10px rgba(45, 212, 191, 0.2);
 }
 
 .bg-hero-gradient {

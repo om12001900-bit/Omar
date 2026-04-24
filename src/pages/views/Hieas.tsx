@@ -148,20 +148,20 @@ export default function Hieas() {
   };
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden text-right">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2 py-4 shrink-0">
-        <div className="text-right">
-          <h1 className="text-2xl md:text-3xl font-display font-black text-white tracking-tight">الهيئات الاستراتيجية</h1>
-          <p className="text-slate-500 mt-1 font-medium text-sm">تنظيم ومتابعة الكيانات والأنظمة المؤسسية العليا</p>
+    <div className="h-full flex flex-col p-4 md:p-8 overflow-hidden text-right pb-24 md:pb-8">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-6 shrink-0 border-b border-white/5 mb-6">
+        <div className="text-right w-full md:w-auto">
+          <h1 className="text-3xl md:text-5xl font-display font-black text-white tracking-tighter leading-tight mb-2">الهيئات الاستراتيجية</h1>
+          <p className="text-slate-500 font-bold text-sm md:text-base">تنظيم ومتابعة الكيانات والأنظمة المؤسسية العليا</p>
         </div>
         <button 
           onClick={() => setModalOpen(true)}
-          className="w-full md:w-auto bg-brand-primary text-brand-dark font-black px-6 py-3 rounded-none flex items-center justify-center gap-3 hover:scale-[1.03] active:scale-95 shadow-lg shadow-brand-primary/10 transition-all group"
+          className="w-full md:w-auto bg-brand-primary text-brand-dark font-black px-8 py-4 rounded-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-brand-primary/20 transition-all group shrink-0"
         >
-          <span className="text-base">إضافة هيئة جديدة</span>
-          <div className="w-8 h-8 rounded-none bg-brand-dark/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
-            <Plus size={18} strokeWidth={3} />
+          <div className="w-10 h-10 rounded-xl bg-brand-dark/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
+            <Plus size={20} strokeWidth={3} />
           </div>
+          <span className="text-base tracking-tight">إضافة هيئة جديدة</span>
         </button>
       </div>
 
@@ -173,46 +173,46 @@ export default function Hieas() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="p-2 space-y-8 pb-12"
+              className="p-2 space-y-10 pb-12"
             >
               {/* Search and Filters Bar */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4 glass p-4 border border-white/5 bg-white/[0.01]">
-                <div className="flex items-center gap-4 w-full md:w-96 bg-brand-dark/50 border border-white/10 px-4 py-2.5 focus-within:border-brand-primary/40 transition-all">
-                  <Search size={18} className="text-slate-500" />
+              <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-6 bg-[#0a0a0b] p-6 rounded-3xl border border-white/5">
+                <div className="flex items-center gap-4 flex-1 bg-[#020617] border border-white/10 rounded-2xl px-5 py-3.5 focus-within:ring-4 focus-within:ring-brand-primary/5 transition-all">
+                  <Search size={20} className="text-slate-700" />
                   <input 
                     type="text"
-                    placeholder="ابحث عن هيئة استراتيجية..."
+                    placeholder="ابحث عن كيان استراتيجي..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-transparent border-none outline-none text-sm text-slate-300 placeholder:text-slate-600 text-right w-full px-2"
+                    className="bg-transparent border-none outline-none text-sm text-slate-300 placeholder:text-slate-700 text-right w-full px-2"
                   />
                 </div>
                 
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">ترتيب حسب:</span>
-                  <div className="flex bg-white/5 p-1 border border-white/5">
-                    <button
-                      onClick={() => setSortBy('name')}
-                      className={`px-6 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all ${
-                        sortBy === 'name' ? 'bg-brand-primary text-brand-dark' : 'text-slate-500 hover:text-slate-300'
-                      }`}
-                    >
-                      الاسم
-                    </button>
-                    <button
-                      onClick={() => setSortBy('progress')}
-                      className={`px-6 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all ${
-                        sortBy === 'progress' ? 'bg-brand-primary text-brand-dark' : 'text-slate-500 hover:text-slate-300'
-                      }`}
-                    >
-                      الإنجاز
-                    </button>
+                <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
+                  <span className="text-[10px] font-black uppercase text-slate-600 tracking-[0.2em] sm:ml-2">ترتيب البيانات:</span>
+                  <div className="flex bg-[#020617] p-1.5 rounded-2xl border border-white/10 w-full sm:w-auto">
+                    {[
+                      { id: 'name', label: 'الاسم' },
+                      { id: 'progress', label: 'الإنجاز' }
+                    ].map(option => (
+                      <button
+                        key={option.id}
+                        onClick={() => setSortBy(option.id as any)}
+                        className={`flex-1 sm:flex-none px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          sortBy === option.id 
+                            ? 'bg-brand-primary text-brand-dark shadow-xl' 
+                            : 'text-slate-600 hover:text-slate-300'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
               {/* Hiea Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8 px-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8 px-2">
                 {hieas
                   .filter(h => h.name.toLowerCase().includes(searchQuery.toLowerCase()))
                   .sort((a, b) => {
@@ -226,7 +226,7 @@ export default function Hieas() {
                     return (
                       <motion.div
                         key={hiea.id}
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                         onClick={() => {
@@ -243,114 +243,100 @@ export default function Hieas() {
                           });
                           setIsEditing(false);
                         }}
-                        className="group relative h-[400px] cursor-pointer overflow-hidden border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-all duration-500 flex flex-col glass"
+                        className="group relative h-[420px] cursor-pointer overflow-hidden border border-white/5 bg-[#0a0a0b] hover:border-white/20 transition-all duration-500 flex flex-col rounded-[2.5rem] shadow-2xl"
                       >
                         {/* Status Light */}
                         <div 
-                          className="absolute top-0 right-0 h-1.5 w-full opacity-40 group-hover:opacity-100 transition-opacity duration-500 z-30"
+                          className="absolute top-0 right-0 h-2 w-full opacity-60 group-hover:opacity-100 transition-opacity duration-500 z-30"
                           style={{ backgroundColor: hiea.color || '#4ade80' }}
                         />
 
                         {/* Card Content */}
-                        <div className="p-8 flex flex-col h-full relative z-10">
+                        <div className="p-8 md:p-10 flex flex-col h-full relative z-10">
                           <div className="flex justify-between items-start mb-8 flex-row-reverse">
                             <div 
-                              className="w-16 h-16 bg-white/5 border border-white/10 flex items-center justify-center relative overflow-hidden transition-all group-hover:scale-110 group-hover:border-white/20"
+                              className="w-20 h-20 bg-[#020617] border border-white/10 rounded-3xl flex items-center justify-center relative overflow-hidden transition-all group-hover:scale-110 group-hover:border-brand-primary/50 group-hover:shadow-[0_0_30px_rgba(74,222,128,0.2)]"
                               style={{ color: hiea.color || '#4ade80' }}
                             >
                               {hiea.logoUrl ? (
-                                <img src={hiea.logoUrl} alt={hiea.name} className="w-full h-full object-contain p-2" />
+                                <img src={hiea.logoUrl} alt={hiea.name} className="w-full h-full object-contain p-3" />
                               ) : (
-                                <Layers size={28} />
+                                <Layers size={32} />
                               )}
-                              <div className="absolute inset-0 bg-brand-primary opacity-0 group-hover:opacity-10 transition-opacity" />
                             </div>
                             <div className="text-right">
-                               <p className="text-[10px] font-black uppercase text-slate-600 tracking-tighter">PROGRESS</p>
-                               <p className="text-2xl font-display font-black text-white">{hiea.progress || 0}%</p>
+                               <p className="text-[10px] font-black uppercase text-slate-600 tracking-[0.2em] mb-1">الإنجاز</p>
+                               <p className="text-3xl font-display font-black text-white">{hiea.progress || 0}%</p>
                             </div>
                           </div>
 
                           <div className="flex-1 space-y-4">
-                            <h3 className="text-xl font-display font-black text-white leading-tight group-hover:text-brand-primary transition-colors text-right">
+                            <h3 className="text-2xl font-display font-black text-white leading-tight group-hover:text-brand-primary transition-colors text-right tracking-tight">
                               {hiea.name}
                             </h3>
-                            <p className="text-[11px] text-slate-500 line-clamp-4 leading-relaxed h-[5.5em] text-right">
+                            <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed text-right font-medium">
                               {hiea.description || 'لا يوجد وصف استراتيجي مسجل لهذا الكيان حالياً في قاعدة البيانات المركزية.'}
                             </p>
                           </div>
 
+                          {/* Stats Row */}
+                          <div className="flex items-center justify-end gap-6 mb-8 flex-row-reverse">
+                             <div className="flex flex-col items-end">
+                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest mb-1">أهداف</span>
+                                <span className="text-sm font-black text-slate-300">{relatedGoals.length}</span>
+                             </div>
+                             <div className="w-px h-6 bg-white/5" />
+                             <div className="flex flex-col items-end">
+                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest mb-1">مشاريع</span>
+                                <span className="text-sm font-black text-slate-300">{relatedProjects.length}</span>
+                             </div>
+                          </div>
+
                           {/* Progress Line */}
-                          <div className="mt-8 pt-6 border-t border-white/5 relative">
-                             <div className="w-full h-1 bg-white/5 rounded-none overflow-hidden">
-                                <div 
-                                  className="h-full rounded-none transition-all duration-1000"
+                          <div className="pt-2 relative">
+                             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${hiea.progress || 0}%` }}
+                                  transition={{ duration: 1.5, ease: "circOut" }}
+                                  className="h-full rounded-full transition-all duration-1000"
                                   style={{ 
-                                    width: `${hiea.progress || 0}%`,
                                     backgroundColor: hiea.color || '#4ade80'
                                   }}
                                 />
-                             </div>
-                             <div className="flex items-center justify-between mt-3 flex-row-reverse">
-                                <span className="text-[8px] font-black uppercase text-slate-600 tracking-widest">Global Efficiency</span>
-                                <div className="flex items-center gap-4 flex-row-reverse">
-                                   <div className="flex items-center gap-1.5 flex-row-reverse">
-                                      <Target size={12} className="text-brand-primary" />
-                                      <span className="text-[11px] font-black text-slate-400">{relatedGoals.length}</span>
-                                   </div>
-                                   <div className="flex items-center gap-1.5 flex-row-reverse">
-                                      <Briefcase size={12} className="text-brand-secondary" />
-                                      <span className="text-[11px] font-black text-slate-400">{relatedProjects.length}</span>
-                                   </div>
-                                </div>
                              </div>
                           </div>
                         </div>
 
                         {/* HOVER OVERLAY: Details Reveal */}
                         <motion.div 
-                          className="absolute inset-0 bg-brand-dark/95 z-20 p-8 flex flex-col justify-between translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out"
+                          className="absolute inset-0 bg-[#020617]/98 z-40 p-10 flex flex-col justify-between translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.23,1,0.32,1]"
                         >
-                           <div className="space-y-6">
-                              <div className="flex items-center justify-between border-b border-white/5 pb-4 flex-row-reverse">
-                                 <h4 className="text-sm font-black uppercase tracking-widest text-brand-primary">عرض التفاصيل الاستراتيجية</h4>
-                                 <ArrowRight size={16} className="text-slate-600 rtl-flip" />
+                           <div className="space-y-8">
+                              <div className="flex items-center justify-between border-b border-white/5 pb-6 flex-row-reverse">
+                                 <h4 className="text-xs font-black uppercase tracking-[0.3em] text-brand-primary">لوحة التحكم</h4>
+                                 <ArrowRight size={18} className="text-slate-700 rtl-flip" />
                               </div>
                               
-                              <div className="space-y-6">
-                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase text-slate-600 mb-3 text-right">الأهداف الاستراتيجية ({relatedGoals.length})</p>
-                                    <div className="space-y-2.5">
+                              <div className="space-y-8">
+                                 <div className="space-y-4">
+                                    <p className="text-[10px] font-black uppercase text-slate-700 mb-4 text-right tracking-widest">تنسيق الأهداف</p>
+                                    <div className="space-y-3">
                                        {relatedGoals.slice(0, 3).map(g => (
-                                          <div key={g.id} className="text-[11px] font-bold text-slate-400 truncate flex items-center gap-3 justify-end whitespace-nowrap overflow-hidden">
+                                          <div key={g.id} className="text-xs font-bold text-slate-400 truncate flex items-center gap-3 justify-end">
                                              <span className="truncate">{g.name}</span>
-                                             <div className="w-1.5 h-1.5 shrink-0 bg-brand-primary opacity-50" />
+                                             <div className="w-1.5 h-1.5 shrink-0 bg-brand-primary/40 rounded-full" />
                                           </div>
                                        ))}
-                                       {relatedGoals.length > 3 && <p className="text-[9px] text-slate-700 italic text-right">+{relatedGoals.length - 3} أهداف أخرى...</p>}
-                                       {relatedGoals.length === 0 && <p className="text-[10px] text-slate-700 italic text-right opacity-50">لا توجد أهداف فعالة</p>}
-                                    </div>
-                                 </div>
-
-                                 <div className="pt-5 border-t border-white/5 space-y-2">
-                                    <p className="text-[10px] font-black uppercase text-slate-600 mb-3 text-right">المشاريع التنفيذية ({relatedProjects.length})</p>
-                                    <div className="space-y-2.5">
-                                       {relatedProjects.slice(0, 3).map(p => (
-                                          <div key={p.id} className="text-[11px] font-bold text-slate-400 truncate flex items-center gap-3 justify-end whitespace-nowrap overflow-hidden">
-                                             <span className="truncate">{p.name}</span>
-                                             <div className="w-1.5 h-1.5 shrink-0 bg-brand-secondary opacity-50" />
-                                          </div>
-                                       ))}
-                                       {relatedProjects.length > 3 && <p className="text-[9px] text-slate-700 italic text-right">+{relatedProjects.length - 3} مشاريع أخرى...</p>}
-                                       {relatedProjects.length === 0 && <p className="text-[10px] text-slate-700 italic text-right opacity-50">لا توجد مسارات تنفيذية</p>}
+                                       {relatedGoals.length > 3 && <p className="text-[10px] text-brand-primary font-black uppercase tracking-widest text-right mt-2">+{relatedGoals.length - 3} MORE</p>}
+                                       {relatedGoals.length === 0 && <p className="text-xs text-slate-800 italic text-right">No active goals</p>}
                                     </div>
                                  </div>
                               </div>
                            </div>
 
-                           <div className="bg-brand-primary/10 border border-brand-primary/20 text-brand-primary py-4 text-center text-[10px] font-black uppercase tracking-[0.3em] overflow-hidden relative group/btn">
-                              <div className="absolute inset-x-0 bottom-0 h-0.5 bg-brand-primary scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-right" />
-                              إدارة الكيان الاستراتيجي
+                           <div className="bg-brand-primary text-brand-dark p-6 rounded-[1.5rem] text-center text-xs font-black uppercase tracking-[0.4em] shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                              إدارة الكيان 
                            </div>
                         </motion.div>
                       </motion.div>

@@ -8,6 +8,7 @@ import {
   AlertCircle,
   Plus, 
   Briefcase, 
+  Search,
   Layers,
   Calendar, 
   CheckCircle2, 
@@ -185,26 +186,28 @@ export default function Projects() {
   return (
     <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden text-right">
       {/* Header section with high-contrast typography and clear call-to-action */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2 py-6 shrink-0 border-b border-white/5 mb-4">
-        <div className="text-right">
-          <h1 className="text-2xl md:text-3xl font-display font-black text-white tracking-tight leading-none">المشاريع التنفيذية</h1>
-          <p className="text-slate-500 mt-2 font-medium text-sm">تنسيق المبادرات الميدانية وتحديث مسارات الإنجاز بصورة تفاعلية</p>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-8 shrink-0 border-b border-white/5 mb-6">
+        <div className="text-right w-full md:w-auto">
+          <h1 className="text-3xl md:text-5xl font-display font-black text-white tracking-tighter leading-tight mb-2">المشاريع التنفيذية</h1>
+          <p className="text-slate-500 font-bold text-sm md:text-base">تنسيق المبادرات الميدانية وتحديث مسارات الإنجاز بصورة تفاعلية</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex bg-white/5 p-1 rounded-none border border-white/5">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+          <div className="flex bg-[#0a0a0b] p-1.5 rounded-2xl border border-white/5 w-full sm:w-auto">
             <button 
               onClick={() => setViewType('grid')}
-              className={`p-2 transition-all ${viewType === 'grid' ? 'bg-brand-secondary text-brand-dark shadow-lg shadow-brand-secondary/20' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex-1 sm:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 ${viewType === 'grid' ? 'bg-brand-secondary text-brand-dark shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
               title="عرض الشبكة"
             >
               <LayoutGrid size={20} />
+              <span className="text-[10px] sm:hidden font-black uppercase tracking-widest">الآن</span>
             </button>
             <button 
               onClick={() => setViewType('timeline')}
-              className={`p-2 transition-all ${viewType === 'timeline' ? 'bg-brand-secondary text-brand-dark shadow-lg shadow-brand-secondary/20' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex-1 sm:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 ${viewType === 'timeline' ? 'bg-brand-secondary text-brand-dark shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
               title="عرض الجدول الزمني"
             >
               <GanttChart size={20} />
+              <span className="text-[10px] sm:hidden font-black uppercase tracking-widest">تاريخ</span>
             </button>
           </div>
           <button 
@@ -212,12 +215,12 @@ export default function Projects() {
               resetForm();
               setModalOpen(true);
             }}
-            className="w-full md:w-auto bg-brand-primary text-brand-dark font-black px-6 py-3 rounded-none flex items-center justify-center gap-3 hover:scale-[1.03] active:scale-95 shadow-lg shadow-brand-primary/10 transition-all group"
+            className="w-full md:w-auto bg-brand-primary text-brand-dark font-black px-8 py-4 rounded-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-brand-primary/20 transition-all group shrink-0"
           >
-            <span className="text-base">إطلاق مشروع جديد</span>
-            <div className="w-8 h-8 rounded-none bg-brand-dark/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
-              <Plus size={18} strokeWidth={3} />
+            <div className="w-10 h-10 rounded-xl bg-brand-dark/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
+              <Plus size={20} strokeWidth={3} />
             </div>
+            <span className="text-base tracking-tight">إطلاق مشروع جديد</span>
           </button>
         </div>
       </div>
@@ -232,22 +235,22 @@ export default function Projects() {
               exit={{ opacity: 0, y: -20 }}
               className="h-full flex flex-col pt-4 overflow-hidden"
             >
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-8 px-2 shrink-0">
-                  <div className="flex flex-col gap-6 w-full lg:w-auto">
-                    <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-6 mb-12 px-2 shrink-0">
+                  <div className="flex flex-col gap-6 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3">
                       {[
-                        { id: 'all', label: 'كافة المشاريع' },
+                        { id: 'all', label: 'الكل' },
                         { id: ProjectStatus.UPCOMING, label: 'قيد التخطيط' },
-                        { id: ProjectStatus.IN_PROGRESS, label: 'نشطة حالياً' },
-                        { id: ProjectStatus.COMPLETED, label: 'مبادرات منجزة' }
+                        { id: ProjectStatus.IN_PROGRESS, label: 'نشطة' },
+                        { id: ProjectStatus.COMPLETED, label: 'منجزة' }
                       ].map(filter => (
                         <button
                           key={filter.id}
                           onClick={() => setFilterStatus(filter.id as any)}
-                          className={`px-6 py-2.5 rounded-none text-[10px] font-black uppercase tracking-widest transition-all border ${
+                          className={`flex-1 sm:flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
                             filterStatus === filter.id 
-                            ? 'bg-brand-secondary/10 border-brand-secondary/40 text-brand-secondary ring-1 ring-brand-secondary/20' 
-                            : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-300'
+                            ? 'bg-brand-secondary/10 border-brand-secondary/40 text-brand-secondary ring-4 ring-brand-secondary/5' 
+                            : 'bg-[#0a0a0b] border-white/5 text-slate-500 hover:text-slate-300 hover:border-white/10'
                           }`}
                         >
                           {filter.label}
@@ -256,14 +259,16 @@ export default function Projects() {
                     </div>
 
                     {/* Tag Filter Bar */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[9px] font-black uppercase text-slate-700 tracking-widest ml-4">تصفية حسب الوسم:</span>
+                    <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
+                      <div className="sticky right-0 bg-[#020617] pl-4 flex items-center shrink-0">
+                        <span className="text-[10px] font-black uppercase text-slate-700 tracking-widest">الوسوم:</span>
+                      </div>
                       <button
                         onClick={() => setSelectedTag('all')}
-                        className={`px-4 py-1.5 rounded-none text-[8px] font-bold uppercase transition-all border ${
+                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all shrink-0 border ${
                           selectedTag === 'all' 
                           ? 'bg-white/10 border-white/20 text-white' 
-                          : 'bg-white/[0.02] border-transparent text-slate-600 hover:text-slate-400'
+                          : 'bg-[#0a0a0b] border-transparent text-slate-600 hover:text-slate-400'
                         }`}
                       >
                         الكل
@@ -272,10 +277,10 @@ export default function Projects() {
                         <button
                           key={tag}
                           onClick={() => setSelectedTag(tag)}
-                          className={`px-4 py-1.5 rounded-none text-[8px] font-bold uppercase transition-all border ${
+                          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all shrink-0 border ${
                             selectedTag === tag 
                             ? 'bg-brand-secondary/20 border-brand-secondary/40 text-brand-secondary' 
-                            : 'bg-white/[0.02] border-transparent text-slate-600 hover:text-slate-400'
+                            : 'bg-[#0a0a0b] border-transparent text-slate-600 hover:text-slate-400'
                           }`}
                         >
                           #{tag}
@@ -284,19 +289,23 @@ export default function Projects() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center bg-white/5 border border-white/5 px-4 py-2 hover:border-white/10 transition-all focus-within:border-brand-secondary/30">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="flex items-center bg-[#0a0a0b] border border-white/5 rounded-2xl px-5 py-3 hover:border-brand-secondary/30 transition-all focus-within:ring-4 focus-within:ring-brand-secondary/5 w-full sm:w-72">
+                       <Search size={16} className="text-slate-600" />
                        <input 
                          type="text"
                          placeholder="بحث في المبادرات..."
                          value={searchQuery}
                          onChange={(e) => setSearchQuery(e.target.value)}
-                         className="bg-transparent border-none outline-none text-xs text-slate-300 placeholder:text-slate-600 text-right w-48"
+                         className="bg-transparent border-none outline-none text-sm text-slate-300 placeholder:text-slate-700 text-right w-full mr-3"
                        />
                     </div>
-                    <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest bg-white/5 px-4 py-2 border border-white/5">
-                      سجلات: {projects.filter(p => (filterStatus === 'all' || p.status === filterStatus) && (selectedTag === 'all' || p.tags?.includes(selectedTag))).length}
-                    </span>
+                    <div className="hidden sm:flex items-center gap-3 px-5 py-3 bg-brand-primary/5 border border-brand-primary/10 rounded-2xl shrink-0">
+                      <span className="text-[10px] font-black uppercase text-brand-primary tracking-widest">
+                        {projects.filter(p => (filterStatus === 'all' || p.status === filterStatus) && (selectedTag === 'all' || p.tags?.includes(selectedTag))).length}
+                      </span>
+                      <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest">سجل</span>
+                    </div>
                   </div>
                 </div>
 
@@ -313,139 +322,170 @@ export default function Projects() {
                          p.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
                         )
                       )
-                      .map((project) => (
-                      <motion.div
-                        layout
-                        key={project.id}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="group cursor-pointer"
-                        onClick={() => {
-                          setSelectedProject(project);
-                          setEditData({
-                            name: project.name,
-                            description: project.description || '',
-                            startDate: project.startDate || '',
-                            endDate: project.endDate || '',
-                            status: project.status || ProjectStatus.IN_PROGRESS,
-                            progress: project.progress || 0,
-                            milestones: project.milestones || [],
-                            hieaId: project.hieaId || '',
-                            goalId: project.goalId || '',
-                            tags: project.tags || [],
-                            icon: project.icon || 'Briefcase',
-                          });
-                          setIsEditing(false);
-                        }}
-                      >
-                        <div className="relative h-full bg-white/[0.02] border border-white/5 p-8 transition-all hover:bg-white/[0.04] hover:border-brand-secondary/30 hover:translate-y-[-4px] overflow-hidden">
-                          {/* Status Accent Line */}
-                          <div 
-                            className={`absolute top-0 right-0 left-0 h-[2px] transition-all bg-brand-secondary/20 group-hover:bg-brand-secondary`} 
-                            style={{ backgroundColor: hieas.find(h => h.id === project.hieaId)?.color }}
-                          />
-                          
-                          <div className="flex items-center justify-between mb-8">
+                      .map((project) => {
+                        const hiea = hieas.find(h => h.id === project.hieaId);
+                        const themeColor = hiea?.color || '#2dd4bf';
+
+                        return (
+                          <motion.div
+                            layout
+                            key={project.id}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="group cursor-pointer"
+                            onClick={() => {
+                              setSelectedProject(project);
+                              setEditData({
+                                name: project.name,
+                                description: project.description || '',
+                                startDate: project.startDate || '',
+                                endDate: project.endDate || '',
+                                status: project.status || ProjectStatus.IN_PROGRESS,
+                                progress: project.progress || 0,
+                                milestones: project.milestones || [],
+                                hieaId: project.hieaId || '',
+                                goalId: project.goalId || '',
+                                tags: project.tags || [],
+                                icon: project.icon || 'Briefcase',
+                              });
+                              setIsEditing(false);
+                            }}
+                          >
                             <div 
-                              className={`w-12 h-12 rounded-none flex items-center justify-center bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20`}
-                              style={{ borderColor: hieas.find(h => h.id === project.hieaId)?.color, color: hieas.find(h => h.id === project.hieaId)?.color }}
+                              className="relative h-full bg-white/[0.02] border border-white/5 p-8 transition-all hover:bg-white/[0.04] hover:translate-y-[-4px] overflow-hidden"
+                              style={{ 
+                                borderColor: hiea?.color ? `${hiea.color}33` : undefined,
+                              }}
                             >
-                              <ProjectIcon name={project.icon} size={20} />
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span 
-                                className="text-xl font-display font-black text-white/40 tracking-tighter group-hover:text-brand-secondary/60 transition-colors"
-                                style={{ color: hieas.find(h => h.id === project.hieaId)?.color ? `${hieas.find(h => h.id === project.hieaId)?.color}66` : undefined }}
-                              >
-                                {project.progress}%
-                              </span>
-                              <div className="w-24 h-2 bg-white/5 mt-1 rounded-none overflow-hidden border border-white/5 relative">
-                                 {/* Dynamic Glow Layer */}
-                                 <motion.div 
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: [0.3, 0.6, 0.3] }}
-                                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                                    style={{ width: `${project.progress}%`, backgroundColor: hieas.find(h => h.id === project.hieaId)?.color }}
-                                    className="absolute inset-0 bg-brand-secondary/20 blur-md pointer-events-none"
-                                 />
-                                 
-                                 <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${project.progress}%` }}
-                                    transition={{ duration: 1.2, ease: "circOut" }}
-                                    className="h-full bg-gradient-to-l from-brand-secondary via-brand-secondary to-brand-primary relative z-10" 
-                                    style={{ background: hieas.find(h => h.id === project.hieaId)?.color ? `linear-gradient(to left, ${hieas.find(h => h.id === project.hieaId)?.color}, ${hieas.find(h => h.id === project.hieaId)?.color}cc)` : undefined }}
-                                 >
-                                    {/* Glass Shimmer Effect */}
-                                    <motion.div 
-                                      animate={{ x: ['-200%', '200%'] }}
-                                      transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
-                                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg]"
-                                    />
-                                    
-                                    {/* Tip Glow Pin */}
-                                    <div className="absolute top-0 bottom-0 left-0 w-[2px] bg-white shadow-[0_0_10px_#fff]" />
-                                 </motion.div>
+                              {/* Status Accent Line */}
+                              <div 
+                                className="absolute top-0 right-0 left-0 h-[2px] transition-all" 
+                                style={{ backgroundColor: themeColor }}
+                              />
+                              
+                              <div className="flex items-center justify-between mb-8">
+                                <div 
+                                  className="w-12 h-12 rounded-none flex items-center justify-center border transition-all"
+                                  style={{ 
+                                    backgroundColor: `${themeColor}1a`, 
+                                    borderColor: `${themeColor}4d`,
+                                    color: themeColor
+                                  }}
+                                >
+                                  <ProjectIcon name={project.icon} size={20} />
+                                </div>
+                                <div className="flex flex-col items-end">
+                                  <span 
+                                    className="text-xl font-display font-black tracking-tighter transition-colors"
+                                    style={{ color: `${themeColor}cc` }}
+                                  >
+                                    {project.progress}%
+                                  </span>
+                                  <div className="w-24 h-2 bg-white/5 mt-1 rounded-none overflow-hidden border border-white/5 relative">
+                                     {/* Dynamic Glow Layer */}
+                                     <motion.div 
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                                        transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                                        style={{ width: `${project.progress}%`, backgroundColor: themeColor }}
+                                        className="absolute inset-0 blur-md pointer-events-none"
+                                     />
+                                     
+                                     <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${project.progress}%` }}
+                                        transition={{ duration: 1.2, ease: "circOut" }}
+                                        className="h-full relative z-10" 
+                                        style={{ background: `linear-gradient(to left, ${themeColor}, ${themeColor}cc)` }}
+                                     >
+                                        {/* Glass Shimmer Effect */}
+                                        <motion.div 
+                                          animate={{ x: ['-200%', '200%'] }}
+                                          transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+                                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg]"
+                                        />
+                                        
+                                        {/* Tip Glow Pin */}
+                                        <div className="absolute top-0 bottom-0 left-0 w-[2px] bg-white shadow-[0_0_10px_#fff]" />
+                                     </motion.div>
+                                  </div>
+                                </div>
                               </div>
+
+                              <h4 className="text-xl font-bold text-white mb-4 line-clamp-2 leading-tight group-hover:text-brand-secondary transition-colors">{project.name}</h4>
+                              
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                  {project.tags?.map(tag => (
+                                    <span 
+                                      key={tag} 
+                                      className="px-2 py-0.5 text-[8px] font-black uppercase tracking-tighter border transition-all"
+                                      style={{ 
+                                        backgroundColor: `${themeColor}1a`, 
+                                        color: themeColor,
+                                        borderColor: `${themeColor}33`
+                                      }}
+                                    >
+                                      #{tag}
+                                    </span>
+                                  ))}
+                              </div>
+                              <p className="text-xs text-slate-500 mb-8 line-clamp-3 leading-relaxed min-h-[4.5em]">{project.description || 'لا يوجد وصف متاح لهذا المشروع حالياً.'}</p>
+                              
+                              <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
+                                 <div className="flex flex-col">
+                                    <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">الحالة التنفيذية</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-tight" style={{ color: themeColor }}>
+                                      {project.status === 'completed' ? 'تم الإنجاز' : project.status === 'in-progress' ? 'نشط ميدانياً' : 'مرحلة التخطيط'}
+                                    </span>
+                                 </div>
+                                 <div className="flex gap-2">
+                                   <button 
+                                     onClick={(e) => openDeleteConfirm(e, project.id)}
+                                     className="p-3 text-red-500/50 hover:text-red-500 bg-red-500/5 hover:bg-red-500/10 transition-all rounded-none border border-red-500/10"
+                                     title="حذف المشروع"
+                                   >
+                                     <Trash2 size={16} />
+                                   </button>
+                                   <button 
+                                     className="p-3 transition-all border"
+                                     style={{ 
+                                       backgroundColor: `${themeColor}0d`, 
+                                       borderColor: `${themeColor}1a`,
+                                       color: `${themeColor}80`
+                                     }}
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       setSelectedProject(project);
+                                       setEditData({
+                                         name: project.name,
+                                         description: project.description || '',
+                                         startDate: project.startDate || '',
+                                         endDate: project.endDate || '',
+                                         status: project.status || ProjectStatus.IN_PROGRESS,
+                                         progress: project.progress || 0,
+                                         milestones: project.milestones || [],
+                                         hieaId: project.hieaId || '',
+                                         goalId: project.goalId || '',
+                                         tags: project.tags || [],
+                                         icon: project.icon || 'Briefcase',
+                                       });
+                                       setIsEditing(false);
+                                     }}
+                                   >
+                                     <ChevronLeft size={16} className="rtl-flip" style={{ color: themeColor }} />
+                                   </button>
+                                 </div>
+                              </div>
+
+                              {/* Background Decor */}
+                              <div 
+                                className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-[60px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" 
+                                style={{ backgroundColor: `${themeColor}33` }}
+                              />
                             </div>
-                          </div>
-
-                          <h4 className="text-xl font-bold text-white mb-4 line-clamp-2 leading-tight group-hover:text-brand-secondary transition-colors">{project.name}</h4>
-                          
-                          <div className="flex flex-wrap gap-2 mb-4">
-                              {project.tags?.map(tag => (
-                                <span key={tag} className="px-2 py-0.5 bg-brand-secondary/10 text-brand-secondary text-[8px] font-black uppercase tracking-tighter border border-brand-secondary/20">
-                                  #{tag}
-                                </span>
-                              ))}
-                          </div>
-                          <p className="text-xs text-slate-500 mb-8 line-clamp-3 leading-relaxed min-h-[4.5em]">{project.description || 'لا يوجد وصف متاح لهذا المشروع حالياً.'}</p>
-                          
-                          <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
-                             <div className="flex flex-col">
-                                <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">الحالة التنفيذية</span>
-                                <span className="text-[10px] font-bold text-brand-secondary uppercase tracking-tight">
-                                  {project.status === 'completed' ? 'تم الإنجاز' : project.status === 'in-progress' ? 'نشط ميدانياً' : 'مرحلة التخطيط'}
-                                </span>
-                             </div>
-                             <div className="flex gap-2">
-                               <button 
-                                 onClick={(e) => openDeleteConfirm(e, project.id)}
-                                 className="p-3 text-red-500/50 hover:text-red-500 bg-red-500/5 hover:bg-red-500/10 transition-all rounded-none border border-red-500/10"
-                                 title="حذف المشروع"
-                               >
-                                 <Trash2 size={16} />
-                               </button>
-                               <button 
-                                 className="p-3 text-brand-secondary/50 bg-brand-secondary/5 border border-brand-secondary/10 hover:text-brand-secondary hover:bg-brand-secondary/10 transition-all"
-                                 onClick={() => {
-                                   setSelectedProject(project);
-                                   setEditData({
-                                     name: project.name,
-                                     description: project.description || '',
-                                     startDate: project.startDate || '',
-                                     endDate: project.endDate || '',
-                                     status: project.status || ProjectStatus.IN_PROGRESS,
-                                     progress: project.progress || 0,
-                                     milestones: project.milestones || [],
-                                     hieaId: project.hieaId || '',
-                                     goalId: project.goalId || '',
-                                     tags: project.tags || [],
-                                     icon: project.icon || 'Briefcase',
-                                   });
-                                   setIsEditing(false);
-                                 }}
-                               >
-                                 <ChevronLeft size={16} className="rtl-flip" />
-                               </button>
-                             </div>
-                          </div>
-
-                          {/* Background Decor */}
-                          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-brand-secondary/5 rounded-full blur-[60px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </motion.div>
-                    ))}
+                          </motion.div>
+                        );
+                      })}
                   </div>
                 ) : (
                   <ProjectGantt 
