@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, Target, Layers, Briefcase, Eye } from 'lucide-react';
+import { Logo } from '../components/Logo';
 
 export default function Landing() {
   return (
@@ -11,12 +12,7 @@ export default function Landing() {
 
       {/* Header */}
       <header className="relative z-10 max-w-7xl mx-auto px-6 py-8 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 glass rounded-xl flex items-center justify-center neon-glow">
-            <span className="text-brand-primary font-display font-bold text-xl">O</span>
-          </div>
-          <span className="text-2xl font-display font-bold tracking-wider">V.9</span>
-        </div>
+        <Logo />
         <Link 
           to="/login" 
           className="px-6 py-2 rounded-full glass hover:bg-white/10 transition-all font-medium text-sm md:text-base border border-brand-primary/20"
@@ -71,9 +67,12 @@ export default function Landing() {
                <div className="absolute w-[65%] h-[65%] border border-brand-secondary/10 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
                <div className="absolute w-[45%] h-[45%] border border-brand-primary/20 rounded-full animate-[spin_20s_linear_infinite]" />
                
-               <div className="z-10 text-center">
-                  <div className="text-8xl font-display font-extrabold text-white mb-4 drop-shadow-[0_0_30px_rgba(74,222,128,0.3)]">O.V.9</div>
-                  <div className="text-brand-primary tracking-[0.5em] text-xl font-bold uppercase">Vision Platform</div>
+               <div className="z-10 text-center flex flex-col items-center">
+                  <Logo className="scale-[3]" showText={false} />
+                  <div className="mt-20">
+                    <div className="text-8xl font-display font-extrabold text-white mb-2 drop-shadow-[0_0_30px_rgba(74,222,128,0.3)]">O.V.9</div>
+                    <div className="text-brand-primary tracking-[0.5em] text-xl font-bold uppercase">Vision Platform</div>
+                  </div>
                </div>
             </div>
           </motion.div>
