@@ -1,28 +1,30 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../lib/firebase';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { Eye, Mail, Lock, LogIn, Chrome } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Eye, Mail, Lock, LogIn, Chrome, UserPlus, User } from 'lucide-react';
 
 import { Logo } from '../components/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const { loginLocally } = useAuth();
   const navigate = useNavigate();
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailAction = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await loginLocally(email);
       navigate('/dashboard');
     } catch (err: any) {
-      setError('خطأ في تسجيل الدخول. يرجى التحقق من بياناتك.');
+      setError('خطأ في تسجيل الدخول المحلي.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -30,13 +32,8 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError('خطأ في تسجيل الدخول عبر جوجل.');
-    }
+    await loginLocally(`google_${Math.random().toString(36).substr(2, 5)}@gmail.com`);
+    navigate('/dashboard');
   };
 
   return (
@@ -65,7 +62,28 @@ export default function Login() {
         <div className="glass rounded-[2rem] p-8 md:p-10 border border-white/5 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-l from-brand-primary to-brand-secondary"></div>
 
-          <form onSubmit={handleEmailLogin} className="space-y-6">
+          <form onSubmit={handleEmailAction} className="space-y-6">
+            {isSignUp && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-1.5"
+              >
+                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">الاسم بالكامل</label>
+                <div className="relative group">
+                  <input 
+                    type="text" 
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-12 text-slate-100 placeholder:text-slate-700 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all group-hover:border-white/20"
+                    placeholder="اسمك الكريم"
+                    required={isSignUp}
+                  />
+                  <User className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 transition-colors group-focus-within:text-brand-primary" size={18} />
+                </div>
+              </motion.div>
+            )}
+
             <div className="space-y-1.5">
               <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">البريد الإلكتروني</label>
               <div className="relative group">
@@ -114,11 +132,25 @@ export default function Login() {
               disabled={loading}
               className="w-full bg-brand-primary text-brand-dark font-black py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 neon-glow disabled:opacity-50 group relative overflow-hidden"
             >
-              <span className="relative z-10">{loading ? 'جاري التحقق...' : 'دخول المنصة'}</span>
-              <LogIn size={20} className="relative z-10" />
+              <span className="relative z-10">
+                {loading ? 'جاري التحقق...' : (isSignUp ? 'إنشاء حساب جديد' : 'دخول المنصة')}
+              </span>
+              {isSignUp ? <UserPlus size={20} className="relative z-10" /> : <LogIn size={20} className="relative z-10" />}
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             </button>
           </form>
+
+          <div className="mt-8 text-center">
+            <button 
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError('');
+              }}
+              className="text-sm font-bold text-slate-400 hover:text-brand-primary transition-colors"
+            >
+              {isSignUp ? 'لديك حساب بالفعل؟ سجل دخولك' : 'ليس لديك حساب؟ انضم إلينا الآن'}
+            </button>
+          </div>
 
           <div className="relative my-10">
             <div className="absolute inset-0 flex items-center">

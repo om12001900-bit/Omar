@@ -3,9 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit2, Layers, Book, Gavel, ArrowRight, ChevronLeft, Target, Briefcase, Activity, TrendingUp, Check, Search, AlertCircle, Upload, Loader2, Link as LinkIcon } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
-import { db, storage } from '../../lib/firebase';
-import { collection, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { localDB } from '../../services/localDB';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import ReactQuill from 'react-quill-new';
@@ -60,18 +58,16 @@ export default function Hieas() {
 
     setIsUploading(true);
     try {
-      const storageRef = ref(storage, `hieas/${user.uid}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      // Simulate file upload with a local deterministic URL or just the file name
+      const fakeUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${file.name}`;
       
       if (isEdit) {
-        setEditContent({ ...editContent, logoUrl: url });
+        setEditContent({ ...editContent, logoUrl: fakeUrl });
       } else {
-        setFormData({ ...formData, logoUrl: url });
+        setFormData({ ...formData, logoUrl: fakeUrl });
       }
     } catch (err) {
       console.error('Upload failed:', err);
-      alert('فشل رفع الصورة. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsUploading(false);
     }
@@ -82,7 +78,7 @@ export default function Hieas() {
     if (!user) return;
 
     try {
-      await addDoc(collection(db, 'hieas'), {
+      localDB.add('hieas', {
         name: formData.name,
         color: formData.color,
         goalIds: formData.goalIds,
@@ -92,7 +88,6 @@ export default function Hieas() {
         laws: '',
         procedures: '',
         ownerId: user.uid,
-        createdAt: serverTimestamp(),
       });
       setModalOpen(false);
       setFormData({ name: '', color: '#4ade80', goalIds: [], logoUrl: '', achievements: '', description: '' });
@@ -104,7 +99,7 @@ export default function Hieas() {
   const handleUpdateContent = async () => {
     if (!selectedHiea) return;
     try {
-      await updateDoc(doc(db, 'hieas', selectedHiea.id), {
+      localDB.update('hieas', selectedHiea.id, {
         laws: editContent.laws,
         procedures: editContent.procedures,
         color: editContent.color,
@@ -125,7 +120,7 @@ export default function Hieas() {
   const handleDelete = async () => {
     if (!deleteConfirm.hieaId) return;
     try {
-      await deleteDoc(doc(db, 'hieas', deleteConfirm.hieaId));
+      localDB.delete('hieas', deleteConfirm.hieaId);
       if (selectedHiea?.id === deleteConfirm.hieaId) setSelectedHiea(null);
       setDeleteConfirm({ isOpen: false, hieaId: null, name: '' });
     } catch (err) {

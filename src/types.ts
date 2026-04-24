@@ -15,9 +15,10 @@ export enum ProjectStatus {
 }
 
 export interface Milestone {
+  id: number;
   title: string;
   completed: boolean;
-  dueDate: string;
+  date: string;
 }
 
 export interface UserSettings {
@@ -48,6 +49,7 @@ export interface Goal {
   projectId?: string;
   category: GoalCategory;
   progress: number;
+  milestones: Milestone[];
   ownerId: string;
   createdAt: any;
 }

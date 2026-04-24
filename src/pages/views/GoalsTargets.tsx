@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, Edit2, Calendar, Target, TrendingUp, Layers, Briefcase, CheckCircle2, ChevronLeft, Check, X, Target as TargetIcon, Activity, Search } from 'lucide-react';
+import { Plus, Trash2, Edit2, Calendar, Target, TrendingUp, Layers, Briefcase, CheckCircle2, ChevronLeft, Check, X, Target as TargetIcon, Activity, Search, ChevronDown } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
-import { db } from '../../lib/firebase';
-import { collection, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { localDB } from '../../services/localDB';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import { GoalType, GoalCategory } from '../../types';
@@ -64,12 +63,11 @@ export default function GoalsTargets() {
     if (!user) return;
 
     try {
-      await addDoc(collection(db, 'goals'), {
+      localDB.add('goals', {
         ...formData,
         milestones: [],
         ownerId: user.uid,
         progress: 0,
-        createdAt: serverTimestamp(),
       });
       setModalOpen(false);
       resetForm();
@@ -81,10 +79,7 @@ export default function GoalsTargets() {
   const handleUpdate = async () => {
     if (!selectedGoal) return;
     try {
-      await updateDoc(doc(db, 'goals', selectedGoal.id), {
-        ...editData,
-        updatedAt: serverTimestamp(),
-      });
+      localDB.update('goals', selectedGoal.id, editData);
       setIsEditing(false);
       setSelectedGoal({ ...selectedGoal, ...editData });
     } catch (err) {
@@ -95,7 +90,7 @@ export default function GoalsTargets() {
   const handleDelete = async () => {
     if (!deleteConfirm.goalId) return;
     try {
-      await deleteDoc(doc(db, 'goals', deleteConfirm.goalId));
+      localDB.delete('goals', deleteConfirm.goalId);
       if (selectedGoal?.id === deleteConfirm.goalId) setSelectedGoal(null);
       setDeleteConfirm({ isOpen: false, goalId: null, name: '' });
     } catch (err) {
@@ -217,6 +212,13 @@ export default function GoalsTargets() {
                             }`}>
                               {goal.type === GoalType.OBJECTIVE ? <Target size={18} /> : <TrendingUp size={18} />}
                             </div>
+                            {goal.hieaId && (
+                              <div 
+                                className="w-1.5 h-6 rounded-full" 
+                                style={{ backgroundColor: hieas.find(h => h.id === goal.hieaId)?.color || '#4ade80' }}
+                                title={hieas.find(h => h.id === goal.hieaId)?.name}
+                              />
+                            )}
                          </div>
                          <div className="bg-white/5 px-2 py-1 rounded-lg">
                             <span className="text-[10px] font-display font-black text-white/60 tracking-tight">{goal.progress}%</span>
@@ -435,7 +437,7 @@ export default function GoalsTargets() {
                               const val = parseInt(e.target.value);
                               if (!isEditing) {
                                 // Direct update for convenience
-                                updateDoc(doc(db, 'goals', selectedGoal.id), { progress: val });
+                                localDB.update('goals', selectedGoal.id, { progress: val });
                                 setSelectedGoal({ ...selectedGoal, progress: val });
                               } else {
                                 setEditData({ ...editData, progress: val });
@@ -518,25 +520,31 @@ export default function GoalsTargets() {
                              <div className="space-y-5">
                                 <div className="space-y-2">
                                    <label className="text-[10px] text-slate-600 block px-4 uppercase font-black tracking-widest">الهيئة الاستراتيجية</label>
-                                   <select 
-                                     value={editData.hieaId}
-                                     onChange={(e) => setEditData({ ...editData, hieaId: e.target.value })}
-                                     className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-xs text-slate-300 outline-none focus:border-brand-primary appearance-none transition-all px-8"
-                                   >
-                                     <option value="" className="bg-slate-900">اختر الهيئة...</option>
-                                     {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
-                                   </select>
+                                   <div className="relative group">
+                                     <select 
+                                       value={editData.hieaId}
+                                       onChange={(e) => setEditData({ ...editData, hieaId: e.target.value })}
+                                       className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-xs text-slate-300 outline-none focus:border-brand-primary appearance-none transition-all px-8 group-hover:border-white/20 cursor-pointer"
+                                     >
+                                       <option value="" className="bg-slate-900">اختر الهيئة...</option>
+                                       {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
+                                     </select>
+                                     <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 pointer-events-none group-focus-within:text-brand-primary transition-colors" size={14} />
+                                   </div>
                                 </div>
                                 <div className="space-y-2">
                                    <label className="text-[10px] text-slate-600 block px-4 uppercase font-black tracking-widest">المشروع التنفيذي</label>
-                                   <select 
-                                     value={editData.projectId}
-                                     onChange={(e) => setEditData({ ...editData, projectId: e.target.value })}
-                                     className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-xs text-slate-300 outline-none focus:border-brand-primary appearance-none transition-all px-8"
-                                   >
-                                     <option value="" className="bg-slate-900">ربط بمشروع تنفيذ...</option>
-                                     {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
-                                   </select>
+                                   <div className="relative group">
+                                     <select 
+                                       value={editData.projectId}
+                                       onChange={(e) => setEditData({ ...editData, projectId: e.target.value })}
+                                       className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-xs text-slate-300 outline-none focus:border-brand-primary appearance-none transition-all px-8 group-hover:border-white/20 cursor-pointer"
+                                     >
+                                       <option value="" className="bg-slate-900">ربط بمشروع تنفيذ...</option>
+                                       {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
+                                     </select>
+                                     <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 pointer-events-none group-focus-within:text-brand-primary transition-colors" size={14} />
+                                   </div>
                                 </div>
                              </div>
                            ) : (
@@ -748,23 +756,29 @@ export default function GoalsTargets() {
              <div className="space-y-4">
                 <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">الارتباط الهيكلي بالهيئة والاستراتيجية (اختياري)</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <select 
-                    value={formData.hieaId}
-                    onChange={(e) => setFormData({ ...formData, hieaId: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-10 outline-none focus:border-brand-primary text-slate-300 appearance-none font-bold"
-                  >
-                    <option value="" className="bg-slate-900">اختر الهيئة الحاضنة...</option>
-                    {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
-                  </select>
+                  <div className="relative group">
+                    <select 
+                      value={formData.hieaId}
+                      onChange={(e) => setFormData({ ...formData, hieaId: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-10 outline-none focus:border-brand-primary text-slate-300 appearance-none font-bold group-hover:border-white/20 transition-all cursor-pointer"
+                    >
+                      <option value="" className="bg-slate-900">اختر الهيئة الحاضنة...</option>
+                      {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
+                    </select>
+                    <ChevronDown className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none group-focus-within:text-brand-primary transition-colors" size={18} />
+                  </div>
 
-                  <select 
-                    value={formData.projectId}
-                    onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-10 outline-none focus:border-brand-primary text-slate-300 appearance-none font-bold"
-                  >
-                    <option value="" className="bg-slate-900">ربط بمشروع تنفيذي...</option>
-                    {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
-                  </select>
+                  <div className="relative group">
+                    <select 
+                      value={formData.projectId}
+                      onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-10 outline-none focus:border-brand-primary text-slate-300 appearance-none font-bold group-hover:border-white/20 transition-all cursor-pointer"
+                    >
+                      <option value="" className="bg-slate-900">ربط بمشروع تنفيذي...</option>
+                      {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
+                    </select>
+                    <ChevronDown className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none group-focus-within:text-brand-primary transition-colors" size={18} />
+                  </div>
                 </div>
                 
                 <div className="flex gap-4 mt-4">

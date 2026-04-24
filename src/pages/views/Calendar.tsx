@@ -31,18 +31,7 @@ import {
   isToday
 } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  serverTimestamp 
-} from 'firebase/firestore';
-import { db, auth } from '../../lib/firebase';
+import { localDB } from '../../services/localDB';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHieas, useConferences, useProjects } from '../../hooks/useData';
 
@@ -107,27 +96,20 @@ export default function Calendar() {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(
-      collection(db, 'calendar_events'),
-      where('ownerId', '==', user.uid)
-    );
-
-    const unsubscribe = onSnapshot(q, 
-      (snapshot) => {
-        const fetchedEvents = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as CalendarEvent[];
+    const fetchEvents = () => {
+      try {
+        const fetchedEvents = localDB.getAll('calendar_events').filter((e: any) => e.ownerId === user.uid) as CalendarEvent[];
         setEvents(fetchedEvents);
         setLoading(false);
-      },
-      (error) => {
-        console.error("Error in calendar_events listener:", error);
+      } catch (error) {
+        console.error("Error fetching calendar events:", error);
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchEvents();
+    window.addEventListener('local-storage-update', fetchEvents);
+    return () => window.removeEventListener('local-storage-update', fetchEvents);
   }, [user]);
 
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
@@ -240,27 +222,25 @@ export default function Calendar() {
       const eventData = {
         ...formData,
         ownerId: user.uid,
-        createdAt: serverTimestamp(),
       };
 
       if (editingEvent) {
-        await updateDoc(doc(db, 'calendar_events', editingEvent.id), eventData);
+        localDB.update('calendar_events', editingEvent.id, eventData);
       } else {
-        await addDoc(collection(db, 'calendar_events'), eventData);
+        localDB.add('calendar_events', eventData);
       }
 
       setIsModalOpen(false);
       resetForm();
     } catch (error) {
       console.error('Error saving event:', error);
-      alert('حدث خطأ أثناء حفظ الفعالية');
     }
   };
 
   const handleDeleteEvent = async (eventId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذه الفعالية؟')) return;
     try {
-      await deleteDoc(doc(db, 'calendar_events', eventId));
+      localDB.delete('calendar_events', eventId);
     } catch (error) {
       console.error('Error deleting event:', error);
     }

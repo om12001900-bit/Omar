@@ -27,6 +27,18 @@
         "category": { "type": "string", "enum": ["OV9", "S15"] },
         "status": { "type": "string", "enum": ["pending", "completed", "in-progress"] },
         "progress": { "type": "number" },
+        "milestones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "number" },
+              "title": { "type": "string" },
+              "date": { "type": "string", "format": "date" },
+              "completed": { "type": "boolean" }
+            }
+          }
+        },
         "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },

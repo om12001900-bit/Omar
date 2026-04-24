@@ -20,8 +20,7 @@ import {
   X
 } from 'lucide-react';
 import { useProjects, useGoals, useHieas } from '../../hooks/useData';
-import { db } from '../../lib/firebase';
-import { collection, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { localDB } from '../../services/localDB';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import { ProjectStatus } from '../../types';
@@ -95,11 +94,10 @@ export default function Projects() {
     if (!user) return;
 
     try {
-      await addDoc(collection(db, 'projects'), {
+      localDB.add('projects', {
         ...formData,
         milestones: [],
         ownerId: user.uid,
-        createdAt: serverTimestamp(),
       });
       setModalOpen(false);
       resetForm();
@@ -111,10 +109,7 @@ export default function Projects() {
   const handleUpdate = async () => {
     if (!selectedProject) return;
     try {
-      await updateDoc(doc(db, 'projects', selectedProject.id), {
-        ...editData,
-        updatedAt: serverTimestamp(),
-      });
+      localDB.update('projects', selectedProject.id, editData);
       setIsEditing(false);
       setSelectedProject({ ...selectedProject, ...editData });
     } catch (err) {
@@ -125,7 +120,7 @@ export default function Projects() {
   const deleteProject = async () => {
     if (!deleteConfirm.projectId) return;
     try {
-      await deleteDoc(doc(db, 'projects', deleteConfirm.projectId));
+      localDB.delete('projects', deleteConfirm.projectId);
       if (selectedProject?.id === deleteConfirm.projectId) setSelectedProject(null);
       setDeleteConfirm({ isOpen: false, projectId: null });
     } catch (err) {
@@ -844,7 +839,7 @@ export default function Projects() {
                             onChange={(e) => {
                               const val = parseInt(e.target.value);
                               if (!isEditing) {
-                                updateDoc(doc(db, 'projects', selectedProject.id), { progress: val });
+                                localDB.update('projects', selectedProject.id, { progress: val });
                                 setSelectedProject({ ...selectedProject, progress: val });
                               } else {
                                 setEditData({ ...editData, progress: val });
