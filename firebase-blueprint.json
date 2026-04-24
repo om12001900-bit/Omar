@@ -1,0 +1,151 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account information and settings",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Goal": {
+      "title": "Goal or Target",
+      "description": "An objective or target within the vision",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["objective", "target"] },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "hieaId": { "type": "string" },
+        "projectId": { "type": "string" },
+        "category": { "type": "string", "enum": ["OV9", "S15"] },
+        "status": { "type": "string", "enum": ["pending", "completed", "in-progress"] },
+        "progress": { "type": "number" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "type", "startDate", "endDate", "hieaId", "category", "ownerId"]
+    },
+    "Hiea": {
+      "title": "Hiea Entity",
+      "description": "An administrative or thematic entity (الهئ)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "color": { "type": "string", "description": "Custom hex color accent" },
+        "laws": { "type": "string", "description": "HTML content for laws" },
+        "procedures": { "type": "string", "description": "HTML content for procedures" },
+        "achievements": { "type": "string", "description": "HTML content for achievements" },
+        "logoUrl": { "type": "string" },
+        "goalIds": { 
+          "type": "array", 
+          "items": { "type": "string" } 
+        },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerId"]
+    },
+    "Project": {
+      "title": "Project (Al-Mish)",
+      "description": "A specific project (المشروع)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["upcoming", "in-progress", "completed"] },
+        "progress": { "type": "number" },
+        "milestones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "completed": { "type": "boolean" },
+              "dueDate": { "type": "string", "format": "date" }
+            }
+          }
+        },
+        "ownerId": { "type": "string" },
+        "tags": { 
+          "type": "array", 
+          "items": { "type": "string" } 
+        },
+        "icon": { "type": "string", "description": "Lucide icon name" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "startDate", "endDate", "status", "ownerId"]
+    },
+    "Conference": {
+      "title": "Conference / Event",
+      "description": "An event, conference, or exhibition",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "agenda": { "type": "string" },
+        "hieaId": { "type": "string" },
+        "projectId": { "type": "string" },
+        "goalId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "startDate", "endDate", "location", "ownerId"]
+    },
+    "CalendarEvent": {
+      "title": "Strategic Event",
+      "description": "A scheduled event or meeting on the calendar",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "reminder": { "type": "string", "enum": ["none", "15m", "1h", "1d", "1w"] },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["meeting", "milestone", "deadline", "other"] },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "date", "startTime", "endTime", "type", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles"
+    },
+    "/hieas/{hieaId}": {
+      "schema": "Hiea",
+      "description": "Hiea entities"
+    },
+    "/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "Goals and targets"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Projects"
+    },
+    "/conferences/{confId}": {
+      "schema": "Conference",
+      "description": "Strategic conferences and events"
+    },
+    "/calendar_events/{eventId}": {
+      "schema": "CalendarEvent",
+      "description": "Strategic calendar events"
+    }
+  }
+}

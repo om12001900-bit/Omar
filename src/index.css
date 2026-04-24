@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --brand-primary: #4ade80;
+  --brand-secondary: #2dd4bf;
+  --bg-color: #020617;
+  --text-color: #f1f5f9;
+  --brand-glass: rgba(255, 255, 255, 0.03);
+  --brand-border: rgba(255, 255, 255, 0.08);
+  --radius: 0px;
+  --base-font-size: 16px;
+}
+
+[data-theme="light"] {
+  --brand-primary: #10b981;
+  --brand-secondary: #0d9488;
+  --bg-color: #f8fafc;
+  --text-color: #0f172a;
+  --brand-glass: rgba(0, 0, 0, 0.03);
+  --brand-border: rgba(0, 0, 0, 0.08);
+}
+
+[data-font-size="small"] { --base-font-size: 14px; }
+[data-font-size="medium"] { --base-font-size: 16px; }
+[data-font-size="large"] { --base-font-size: 18px; }
+
+@theme {
+  --font-sans: "Inter", "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Noto Sans Arabic", sans-serif;
+  
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-dark: var(--bg-color);
+  --color-brand-glass: var(--brand-glass);
+  --color-brand-border: var(--brand-border);
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+@layer base {
+  html {
+    font-size: var(--base-font-size);
+  }
+
+  body {
+    @apply bg-brand-dark text-slate-100 font-sans antialiased transition-colors duration-300;
+    color: var(--text-color);
+    direction: rtl;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+
+  * {
+    border-radius: var(--radius);
+  }
+}
+
+.glass {
+  @apply bg-brand-glass backdrop-blur-2xl border border-brand-border;
+}
+
+.neon-glow {
+  box-shadow: 0 0 25px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.bg-hero-gradient {
+  background: radial-gradient(circle at top right, rgba(74, 222, 128, 0.1), transparent 40%),
+              radial-gradient(circle at bottom left, rgba(45, 212, 191, 0.1), transparent 40%);
+}
+
+.text-gradient {
+  @apply text-transparent bg-clip-text bg-gradient-to-l from-brand-primary to-brand-secondary;
+}
+
+/* RTL Helpers */
+.rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20;
+}
+
