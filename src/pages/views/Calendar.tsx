@@ -7,12 +7,9 @@ import {
   Plus, 
   X, 
   Clock, 
-  MapPin, 
-  MoreVertical,
   Trash2,
   Edit2,
   PlusCircle,
-  AlertCircle,
   Bell
 } from 'lucide-react';
 import { 
@@ -26,8 +23,6 @@ import {
   isSameMonth, 
   isSameDay, 
   addDays, 
-  eachDayOfInterval,
-  parseISO,
   isToday
 } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -46,6 +41,7 @@ import {
 import { db, auth } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHieas, useConferences, useProjects } from '../../hooks/useData';
+import { Milestone } from '../../types';
 
 enum OperationType {
   CREATE = 'create',
@@ -166,33 +162,41 @@ export default function Calendar() {
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
   const [showExternal, setShowExternal] = useState(true);
-  const [externalEvents, setExternalEvents] = useState<any[]>([]);
+  const [externalEvents, setExternalEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
-    const fetchedConfs = conferences.map(conf => ({
+    const fetchedConfs: CalendarEvent[] = conferences.map(conf => ({
       id: conf.id,
       title: conf.name,
       date: conf.startDate,
       startTime: '08:00',
       endTime: '17:00',
+      description: conf.description || '',
       type: 'meeting',
+      priority: 'medium',
+      ownerId: conf.ownerId,
       isExternal: true,
       source: 'مؤتمر',
       hieaId: conf.hieaId
     }));
 
-    const fetchedMilestones: any[] = [];
+    const fetchedMilestones: CalendarEvent[] = [];
     projects.forEach(proj => {
       if (proj.milestones) {
-        proj.milestones.forEach((m: any) => {
-          if (m.dueDate) {
+        proj.milestones.forEach((m: Milestone) => {
+          // If milestone has date (some might use 'date' or 'dueDate')
+          const mDate = m.date;
+          if (mDate) {
             fetchedMilestones.push({
-              id: `${proj.id}-${m.title}`,
+              id: `${proj.id}-${m.id}`,
               title: `${proj.name}: ${m.title}`,
-              date: m.dueDate,
+              date: mDate,
               startTime: '00:00',
               endTime: '23:59',
+              description: '',
               type: 'milestone',
+              priority: 'high',
+              ownerId: proj.ownerId,
               isExternal: true,
               source: 'مشروع',
               hieaId: proj.hieaId
@@ -219,7 +223,7 @@ export default function Calendar() {
         const eventDate = new Date(eventDateStr);
         if (isNaN(eventDate.getTime())) return;
 
-        let reminderTime = new Date(eventDate);
+        const reminderTime = new Date(eventDate);
 
         switch (event.reminder) {
           case '15m': reminderTime.setMinutes(reminderTime.getMinutes() - 15); break;
@@ -482,7 +486,10 @@ export default function Calendar() {
                 return (
                   <div 
                     key={event.id}
-                    onClick={(e) => { e.stopPropagation(); !event.isExternal && openEditModal(event); }}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (!event.isExternal) openEditModal(event); 
+                    }}
                     className={`text-[9px] px-2 py-1 truncate font-bold border-r-2 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-colors ${event.isExternal ? 'opacity-60 cursor-default' : ''}`}
                     style={{ borderColor: eventColor }}
                   >
@@ -757,7 +764,7 @@ export default function Calendar() {
                     <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">نوع الفعالية</label>
                     <select 
                       value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value as CalendarEvent['type'] })}
                       className="w-full bg-white/5 border border-white/10 rounded-none px-6 py-4 text-sm text-slate-100 outline-none focus:border-brand-primary transition-all appearance-none"
                     >
                       {EVENT_TYPES.map(type => (
@@ -769,7 +776,7 @@ export default function Calendar() {
                     <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">الأولوية</label>
                     <select 
                       value={formData.priority}
-                      onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+                      onChange={(e) => setFormData({ ...formData, priority: e.target.value as CalendarEvent['priority'] })}
                       className="w-full bg-white/5 border border-white/10 rounded-none px-6 py-4 text-sm text-slate-100 outline-none focus:border-brand-primary transition-all appearance-none"
                     >
                       {PRIORITIES.map(p => (
@@ -797,7 +804,7 @@ export default function Calendar() {
                   <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">تذكير استراتيجي</label>
                   <select 
                     value={formData.reminder}
-                    onChange={(e) => setFormData({ ...formData, reminder: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, reminder: e.target.value as CalendarEvent['reminder'] })}
                     className="w-full bg-white/5 border border-white/10 rounded-none px-6 py-4 text-sm text-slate-100 outline-none focus:border-brand-primary transition-all appearance-none"
                   >
                     <option value="none" className="bg-brand-dark">لا يوجد تذكير</option>

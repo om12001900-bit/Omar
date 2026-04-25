@@ -3,21 +3,21 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutGrid,
   GanttChart,
-  Shield,
-  Target,
-  AlertCircle,
   Plus, 
   Briefcase, 
   Search,
-  Layers,
-  Calendar, 
-  CheckCircle2, 
-  ListTodo, 
   Trash2, 
   ChevronLeft, 
   Edit2, 
   Check, 
-  X
+  X,
+  Calendar,
+  Shield,
+  ListTodo,
+  Layers,
+  Target,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useProjects, useGoals, useHieas } from '../../hooks/useData';
 import { 
@@ -31,7 +31,7 @@ import {
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
-import { ProjectStatus } from '../../types';
+import { ProjectStatus, Project, Milestone } from '../../types';
 import ProjectGantt from '../../components/ProjectGantt';
 import ProjectIcon, { availableIcons } from '../../components/ProjectIcon';
 
@@ -42,7 +42,7 @@ export default function Projects() {
   const { user } = useAuth();
   
   const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [filterStatus, setFilterStatus] = useState<ProjectStatus | 'all'>('all');
   const [viewType, setViewType] = useState<'grid' | 'timeline'>('grid');
@@ -67,14 +67,14 @@ export default function Projects() {
     icon: 'Briefcase',
   });
 
-  const [editData, setEditData] = useState<any>({
+  const [editData, setEditData] = useState<Partial<Project>>({
     name: '',
     description: '',
     startDate: '',
     endDate: '',
     status: ProjectStatus.IN_PROGRESS,
     progress: 0,
-    milestones: [],
+    milestones: [] as Milestone[],
     hieaId: '',
     goalId: '',
     tags: [] as string[],
@@ -162,17 +162,17 @@ export default function Projects() {
     });
   };
 
-  const updateMilestone = (id: number, updates: any) => {
+  const updateMilestone = (id: number, updates: Partial<Milestone>) => {
     setEditData({
       ...editData,
-      milestones: editData.milestones.map((m: any) => m.id === id ? { ...m, ...updates } : m)
+      milestones: (editData.milestones || []).map((m) => m.id === id ? { ...m, ...updates } : m)
     });
   };
 
   const removeMilestone = (id: number) => {
     setEditData({
       ...editData,
-      milestones: editData.milestones.filter((m: any) => m.id !== id)
+      milestones: (editData.milestones || []).filter((m) => m.id !== id)
     });
   };
 
@@ -263,7 +263,7 @@ export default function Projects() {
                       ].map(filter => (
                         <button
                           key={filter.id}
-                          onClick={() => setFilterStatus(filter.id as any)}
+                          onClick={() => setFilterStatus(filter.id as ProjectStatus | 'all')}
                           className={`flex-1 sm:flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
                             filterStatus === filter.id 
                             ? 'bg-brand-secondary/10 border-brand-secondary/40 text-brand-secondary ring-4 ring-brand-secondary/5' 
@@ -1039,7 +1039,7 @@ export default function Projects() {
                       </div>
                       
                       <div className="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-4 relative z-10 text-right">
-                        {(isEditing ? editData.milestones : selectedProject.milestones || []).map((m: any, idx: number) => (
+                        {(isEditing ? editData.milestones : selectedProject.milestones || []).map((m: Milestone, idx: number) => (
                           <motion.div 
                             key={m.id} 
                             initial={{ opacity: 0, x: 20 }}
@@ -1116,7 +1116,7 @@ export default function Projects() {
                          </div>
                          <div className="flex justify-between items-center flex-row-reverse">
                             <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">المراحل المنجزة</span>
-                            <span className="text-sm font-black text-teal-400">{(selectedProject.milestones || []).filter((m:any) => m.completed).length}</span>
+                            <span className="text-sm font-black text-teal-400">{(selectedProject.milestones || []).filter((m: Milestone) => m.completed).length}</span>
                          </div>
                       </div>
                     </div>

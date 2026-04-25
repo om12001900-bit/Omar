@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Settings as SettingsIcon, Shield, User, Bell, Database, Globe, ChevronLeft, Save, 
+  Settings as SettingsIcon, Shield, User, Bell, Database, ChevronLeft, Save, 
   Mail, Phone, Type, AlignLeft, Camera, Upload, Trash2, Palette, Download, 
-  CheckCircle2, AlertCircle, RefreshCw, Smartphone, Sun, Moon, Maximize2, FileInput
+  CheckCircle2, AlertCircle, RefreshCw, Smartphone, Sun, Moon, Maximize2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
@@ -134,7 +134,12 @@ export default function Settings() {
         // 1. Import HIEAs
         if (data.hieas && Array.isArray(data.hieas)) {
           for (const item of data.hieas) {
-            const { id: oldId, createdAt, updatedAt, ...cleanData } = item;
+            const cleanData = { ...item };
+            const oldId = cleanData.id;
+            delete cleanData.id;
+            delete cleanData.createdAt;
+            delete cleanData.updatedAt;
+            
             const docRef = await addDoc(collection(db, 'hieas'), {
               ...cleanData,
               ownerId: user.uid,
@@ -147,8 +152,13 @@ export default function Settings() {
         // 2. Import Projects
         if (data.projects && Array.isArray(data.projects)) {
           for (const item of data.projects) {
-            const { id: oldId, createdAt, updatedAt, ...cleanData } = item;
-            const updatedData = { ...cleanData };
+            const cleanData = { ...item };
+            const oldId = cleanData.id;
+            delete cleanData.id;
+            delete cleanData.createdAt;
+            delete cleanData.updatedAt;
+
+            const updatedData: Record<string, unknown> = { ...cleanData };
             
             // Map parent HIEA if exists
             if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
@@ -163,12 +173,15 @@ export default function Settings() {
             if (oldId) projectIdMap[oldId] = docRef.id;
           }
         }
-
         // 3. Import Goals
         if (data.goals && Array.isArray(data.goals)) {
           for (const item of data.goals) {
-            const { id: oldId, createdAt, updatedAt, ...cleanData } = item;
-            const updatedData = { ...cleanData };
+            const cleanData = { ...item };
+            delete cleanData.id;
+            delete cleanData.createdAt;
+            delete cleanData.updatedAt;
+            
+            const updatedData: Record<string, unknown> = { ...cleanData };
 
             // Map parents
             if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
@@ -189,7 +202,11 @@ export default function Settings() {
         // 4. Import Conferences
         if (data.conferences && Array.isArray(data.conferences)) {
           for (const item of data.conferences) {
-            const { id: oldId, createdAt, updatedAt, ...cleanData } = item;
+            const cleanData = { ...item };
+            delete cleanData.id;
+            delete cleanData.createdAt;
+            delete cleanData.updatedAt;
+
             await addDoc(collection(db, 'conferences'), {
               ...cleanData,
               ownerId: user.uid,
@@ -538,7 +555,7 @@ export default function Settings() {
                         ].map(size => (
                           <button 
                             key={size.id}
-                            onClick={() => updateSettings({ fontSize: size.id as any })}
+                            onClick={() => updateSettings({ fontSize: size.id as 'small' | 'medium' | 'large' })}
                             className={`py-4 px-2 border flex flex-col items-center gap-2 transition-all ${settings.fontSize === size.id ? 'bg-brand-primary/10 border-brand-primary text-brand-primary' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white'}`}
                           >
                             <span className={`${size.size} font-bold opacity-40 group-hover:opacity-100`}>A</span>
@@ -562,7 +579,7 @@ export default function Settings() {
                         ].map(radius => (
                           <button 
                             key={radius.id}
-                            onClick={() => updateSettings({ borderRadius: radius.id as any })}
+                            onClick={() => updateSettings({ borderRadius: radius.id as 'none' | 'small' | 'medium' | 'full' })}
                             className={`py-4 px-1 border flex flex-col items-center gap-2 transition-all overflow-hidden ${settings.borderRadius === radius.id ? 'bg-brand-primary/10 border-brand-primary text-brand-primary' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white'}`}
                           >
                             <div 

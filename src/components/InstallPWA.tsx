@@ -1,6 +1,6 @@
 import React from 'react';
 import { Download } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { usePWA } from '../hooks/usePWA';
 
 export const InstallPWA: React.FC = () => {

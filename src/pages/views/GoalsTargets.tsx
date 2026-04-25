@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, Edit2, Calendar, Target, TrendingUp, Layers, Briefcase, CheckCircle2, ChevronLeft, Check, X, Target as TargetIcon, Activity, Search, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Edit2, Calendar, Target, TrendingUp, Layers, CheckCircle2, ChevronLeft, Check, Target as TargetIcon, Search, ChevronDown } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
 import { 
   collection, 
@@ -13,7 +13,7 @@ import {
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
-import { GoalType, GoalCategory } from '../../types';
+import { GoalType, GoalCategory, Goal, Milestone } from '../../types';
 
 export default function GoalsTargets() {
   const { goals } = useGoals();
@@ -22,7 +22,7 @@ export default function GoalsTargets() {
   const { user } = useAuth();
   
   const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -36,7 +36,7 @@ export default function GoalsTargets() {
     category: GoalCategory.OV9,
   });
 
-  const [editData, setEditData] = useState<any>({
+  const [editData, setEditData] = useState<Partial<Goal>>({
     name: '',
     type: GoalType.OBJECTIVE,
     startDate: '',
@@ -45,7 +45,7 @@ export default function GoalsTargets() {
     projectId: '',
     category: GoalCategory.OV9,
     progress: 0,
-    milestones: [],
+    milestones: [] as Milestone[],
   });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; goalId: string | null; name: string }>({
@@ -120,7 +120,7 @@ export default function GoalsTargets() {
     }
   };
 
-  const openDeleteConfirm = (e: React.MouseEvent, goal: any) => {
+  const openDeleteConfirm = (e: React.MouseEvent, goal: Goal) => {
     e.stopPropagation();
     setDeleteConfirm({ isOpen: true, goalId: goal.id, name: goal.name });
   };
@@ -132,17 +132,17 @@ export default function GoalsTargets() {
     });
   };
 
-  const updateMilestone = (id: number, updates: any) => {
+  const updateMilestone = (id: number, updates: Partial<Milestone>) => {
     setEditData({
       ...editData,
-      milestones: editData.milestones.map((m: any) => m.id === id ? { ...m, ...updates } : m)
+      milestones: (editData.milestones || []).map((m) => m.id === id ? { ...m, ...updates } : m)
     });
   };
 
   const removeMilestone = (id: number) => {
     setEditData({
       ...editData,
-      milestones: editData.milestones.filter((m: any) => m.id !== id)
+      milestones: (editData.milestones || []).filter((m) => m.id !== id)
     });
   };
 
@@ -616,7 +616,7 @@ export default function GoalsTargets() {
                         </div>
                         
                         <div className="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-4 max-h-[550px] relative z-10 text-right">
-                          {(isEditing ? editData.milestones : selectedGoal.milestones || []).map((m: any, idx: number) => (
+                          {(isEditing ? editData.milestones : selectedGoal.milestones || []).map((m: Milestone, idx: number) => (
                             <motion.div 
                               key={m.id} 
                               initial={{ opacity: 0, x: -20 }}
@@ -694,7 +694,7 @@ export default function GoalsTargets() {
                            </div>
                            <div className="flex justify-between items-center">
                               <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">الخطوات المكتملة</span>
-                              <span className="text-sm font-black text-emerald-400">{(selectedGoal.milestones || []).filter((m: any) => m.completed).length}</span>
+                              <span className="text-sm font-black text-emerald-400">{(selectedGoal.milestones || []).filter((m: Milestone) => m.completed).length}</span>
                            </div>
                         </div>
                      </div>

@@ -17,6 +17,8 @@ import Modal from '../../components/Modal';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
+import { Hiea } from '../../types';
+
 export default function Hieas() {
   const { hieas } = useHieas();
   const { goals } = useGoals();
@@ -28,7 +30,7 @@ export default function Hieas() {
   const editFileInputRef = useRef<HTMLInputElement>(null);
   
   const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedHiea, setSelectedHiea] = useState<any>(null);
+  const [selectedHiea, setSelectedHiea] = useState<Hiea | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'progress'>('name');
@@ -47,7 +49,7 @@ export default function Hieas() {
     description: '',
   });
 
-  const [editContent, setEditContent] = useState({
+  const [editContent, setEditContent] = useState<Partial<Hiea>>({
     laws: '',
     procedures: '',
     color: '',
@@ -55,7 +57,6 @@ export default function Hieas() {
     goalIds: [] as string[],
     logoUrl: '',
     achievements: '',
-    description: '',
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -131,7 +132,7 @@ export default function Hieas() {
     }
   };
 
-  const openDeleteConfirm = (e: React.MouseEvent, hiea: any) => {
+  const openDeleteConfirm = (e: React.MouseEvent, hiea: Hiea) => {
     e.stopPropagation();
     setDeleteConfirm({ isOpen: true, hieaId: hiea.id, name: hiea.name });
   };
@@ -195,7 +196,7 @@ export default function Hieas() {
                     ].map(option => (
                       <button
                         key={option.id}
-                        onClick={() => setSortBy(option.id as any)}
+                        onClick={() => setSortBy(option.id as 'name' | 'progress')}
                         className={`flex-1 sm:flex-none px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                           sortBy === option.id 
                             ? 'bg-brand-primary text-brand-dark shadow-xl' 

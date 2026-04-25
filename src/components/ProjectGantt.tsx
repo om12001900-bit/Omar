@@ -1,24 +1,10 @@
 import React, { useMemo } from 'react';
-import { format, min, max, differenceInDays, eachMonthOfInterval, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
+import { format, min, max, differenceInDays, eachMonthOfInterval, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { motion } from 'motion/react';
-import { Milestone, Calendar, ChevronRight } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import ProjectIcon from './ProjectIcon';
-
-interface Project {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  progress: number;
-  status: string;
-  description?: string;
-  hieaId?: string;
-  goalId?: string;
-  milestones?: any[];
-  tags?: string[];
-  icon?: string;
-}
+import { Project, Milestone } from '../types';
 
 interface ProjectGanttProps {
   projects: Project[];
@@ -129,7 +115,7 @@ export default function ProjectGantt({ projects, onProjectClick }: ProjectGanttP
                       />
                       
                       {/* Milestones on bar */}
-                      {(project.milestones || []).map((m, mIdx) => {
+                      {(project.milestones || []).map((m: Milestone, mIdx) => {
                         if (!m.date) return null;
                         const mLeft = ((getPosition(m.date) - left) / width) * 100;
                         return (

@@ -18,7 +18,7 @@ import {
   getDocFromServer
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-import { UserProfile, UserSettings } from '../types';
+import { UserProfile } from '../types';
 
 enum OperationType {
   CREATE = 'create',
@@ -156,7 +156,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithPopup(auth, provider);
   };
 
-  const uploadAvatar = async (file: File) => {
+  const uploadAvatar = async (_file: File) => {
+    void _file;
     const fakeUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`;
     await updateProfile({ photoURL: fakeUrl });
     return fakeUrl;

@@ -1,12 +1,12 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny
+    // 0. Global Safety Net
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper functions
+    // --- Global Helpers ---
     function isSignedIn() {
       return request.auth != null;
     }
@@ -27,105 +27,111 @@ service cloud.firestore {
       return resource.data;
     }
 
-    // --- User Profiles ---
-    match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUser(incoming());
-      allow update: if isOwner(userId) && isValidUser(incoming()) && 
-                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'phoneNumber', 'settings', 'bio']);
-      
-      function isValidUser(data) {
-        return data.uid == request.auth.uid &&
-               data.displayName is string && data.displayName.size() <= 100 &&
-               (data.get('email', '') is string && data.get('email', '').size() <= 255) &&
-               (data.get('phoneNumber', '') is string && data.get('phoneNumber', '').size() <= 30) &&
-               data.createdAt != null;
-      }
+    // --- Entity Validations ---
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.displayName is string && data.displayName.size() <= 100 &&
+             (data.get('email', '') is string && data.get('email', '').size() <= 255) &&
+             (data.get('phoneNumber', '') is string && data.get('phoneNumber', '').size() <= 30) &&
+             (data.get('bio', '') is string && data.get('bio', '').size() <= 1000) &&
+             data.createdAt != null;
     }
 
-    // --- Strategic Goals ---
+    function isValidGoal(data) {
+      return data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 200 &&
+             data.type in ['objective', 'target'] &&
+             data.category in ['OV9', 'S15'] &&
+             (!data.keys().contains('hieaId') || isValidId(data.hieaId)) &&
+             data.createdAt != null;
+    }
+
+    function isValidHiea(data) {
+      return data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 200 &&
+             data.createdAt != null;
+    }
+
+    function isValidProject(data) {
+      return data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 200 &&
+             data.status in ['upcoming', 'in-progress', 'completed'] &&
+             (!data.keys().contains('hieaId') || isValidId(data.hieaId)) &&
+             data.createdAt != null;
+    }
+
+    function isValidConference(data) {
+      return data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 200 &&
+             data.createdAt != null;
+    }
+
+    function isValidEvent(data) {
+      return data.ownerId == request.auth.uid &&
+             data.title is string && data.title.size() <= 200 &&
+             data.type in ['meeting', 'milestone', 'deadline', 'other'] &&
+             data.priority in ['low', 'medium', 'high', 'critical'] &&
+             data.createdAt != null;
+    }
+
+    // --- Resource Routes ---
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'phoneNumber', 'settings', 'bio']);
+    }
+
     match /goals/{goalId} {
       allow get: if isOwner(existing().ownerId);
       allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if isOwner(incoming().ownerId) && isValidGoal(incoming());
+      allow create: if isOwner(incoming().ownerId) && isValidId(goalId) && isValidGoal(incoming());
       allow update: if isOwner(existing().ownerId) && isValidGoal(incoming()) &&
-                    incoming().ownerId == existing().ownerId;
+                    incoming().ownerId == existing().ownerId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'category', 'progress', 'milestones', 'startDate', 'endDate', 'projectId', 'hieaId']);
       allow delete: if isOwner(existing().ownerId);
-
-      function isValidGoal(data) {
-        return data.ownerId == request.auth.uid &&
-               data.name is string && data.name.size() <= 200 &&
-               data.type in ['objective', 'target'] &&
-               data.category in ['OV9', 'S15'] &&
-               data.createdAt != null;
-      }
     }
 
-    // --- Strategic Authorities (Hieas) ---
     match /hieas/{hieaId} {
       allow get: if isOwner(existing().ownerId);
       allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if isOwner(incoming().ownerId) && isValidHiea(incoming());
+      allow create: if isOwner(incoming().ownerId) && isValidId(hieaId) && isValidHiea(incoming());
       allow update: if isOwner(existing().ownerId) && isValidHiea(incoming()) &&
-                    incoming().ownerId == existing().ownerId;
+                    incoming().ownerId == existing().ownerId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'laws', 'procedures', 'achievements', 'logoUrl', 'color', 'progress', 'goalIds']);
       allow delete: if isOwner(existing().ownerId);
-
-      function isValidHiea(data) {
-        return data.ownerId == request.auth.uid &&
-               data.name is string && data.name.size() <= 200 &&
-               data.createdAt != null;
-      }
     }
 
-    // --- Strategic Projects ---
     match /projects/{projectId} {
       allow get: if isOwner(existing().ownerId);
       allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if isOwner(incoming().ownerId) && isValidProject(incoming());
+      allow create: if isOwner(incoming().ownerId) && isValidId(projectId) && isValidProject(incoming());
       allow update: if isOwner(existing().ownerId) && isValidProject(incoming()) &&
-                    incoming().ownerId == existing().ownerId;
+                    incoming().ownerId == existing().ownerId &&
+                    (existing().status != 'completed' || incoming().status == 'completed') &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'startDate', 'endDate', 'status', 'progress', 'milestones', 'hieaId', 'tags', 'icon']);
       allow delete: if isOwner(existing().ownerId);
-
-      function isValidProject(data) {
-        return data.ownerId == request.auth.uid &&
-               data.name is string && data.name.size() <= 200 &&
-               data.status in ['upcoming', 'in-progress', 'completed'] &&
-               data.createdAt != null;
-      }
     }
 
-    // --- Strategic Conferences ---
     match /conferences/{conferenceId} {
       allow get: if isOwner(existing().ownerId);
       allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if isOwner(incoming().ownerId) && isValidConference(incoming());
+      allow create: if isOwner(incoming().ownerId) && isValidId(conferenceId) && isValidConference(incoming());
       allow update: if isOwner(existing().ownerId) && isValidConference(incoming()) &&
-                    incoming().ownerId == existing().ownerId;
+                    incoming().ownerId == existing().ownerId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'startDate', 'endDate', 'location', 'hieaId', 'projectId', 'goalId', 'description', 'agenda']);
       allow delete: if isOwner(existing().ownerId);
-
-      function isValidConference(data) {
-        return data.ownerId == request.auth.uid &&
-               data.name is string && data.name.size() <= 200 &&
-               data.createdAt != null;
-      }
     }
 
-    // --- Calendar Events ---
     match /calendar_events/{eventId} {
       allow get: if isOwner(existing().ownerId);
       allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if isOwner(incoming().ownerId) && isValidEvent(incoming());
+      allow create: if isOwner(incoming().ownerId) && isValidId(eventId) && isValidEvent(incoming());
       allow update: if isOwner(existing().ownerId) && isValidEvent(incoming()) &&
-                    incoming().ownerId == existing().ownerId;
+                    incoming().ownerId == existing().ownerId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'date', 'type', 'priority', 'hieaId', 'projectId', 'isCompleted']);
       allow delete: if isOwner(existing().ownerId);
-
-      function isValidEvent(data) {
-        return data.ownerId == request.auth.uid &&
-               data.title is string && data.title.size() <= 200 &&
-               data.type in ['meeting', 'milestone', 'deadline', 'other'] &&
-               data.priority in ['low', 'medium', 'high', 'critical'] &&
-               data.createdAt != null;
-      }
     }
   }
 }

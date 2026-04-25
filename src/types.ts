@@ -78,6 +78,7 @@ export interface Project {
   progress: number;
   milestones: Milestone[];
   hieaId?: string;
+  goalId?: string;
   tags?: string[];
   icon?: string;
   ownerId: string;

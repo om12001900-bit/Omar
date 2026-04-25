@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, Mail, Lock, LogIn, Chrome, UserPlus, User, Phone } from 'lucide-react';
+import { Mail, Lock, LogIn, Chrome, UserPlus, User, Phone } from 'lucide-react';
 
 import { Logo } from '../components/Logo';
 
@@ -32,8 +32,19 @@ export default function Login() {
         await login(identifier, isPhone, password);
       }
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى.');
+    } catch (err: unknown) {
+      const authError = err as { code?: string; message?: string };
+      if (authError.code === 'auth/operation-not-allowed') {
+        setError('تسجيل الدخول عبر البريد الإلكتروني غير مفعل حالياً. يرجى تفعيله من لوحة تحكم Firebase.');
+      } else if (authError.code === 'auth/popup-closed-by-user') {
+        setError('تم إغلاق نافذة تسجيل الدخول قبل اكتمال العملية.');
+      } else if (authError.code === 'auth/user-not-found' || authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-credential') {
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+      } else if (authError.code === 'auth/email-already-in-use') {
+        setError('هذا البريد الإلكتروني مستخدم بالفعل.');
+      } else {
+        setError(authError.message || 'حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى.');
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -42,11 +53,21 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setError('');
     try {
       await signInWithGoogle();
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'خطأ في تسجيل الدخول عبر جوجل.');
+    } catch (err: unknown) {
+      const authError = err as { code?: string; message?: string };
+      if (authError.code === 'auth/operation-not-allowed') {
+        setError('تسجيل الدخول عبر جوجل غير مفعل حالياً. يرجى تفعيله من لوحة تحكم Firebase.');
+      } else if (authError.code === 'auth/popup-closed-by-user') {
+        setError('تم إغلاق نافذة تسجيل الدخول قبل اكتمال العملية.');
+      } else if (authError.code === 'auth/invalid-credential') {
+        setError('بيانات الاعتماد غير صالحة. يرجى المحاولة مرة أخرى.');
+      } else {
+        setError(authError.message || 'خطأ في تسجيل الدخول عبر جوجل.');
+      }
       console.error(err);
     } finally {
       setLoading(false);

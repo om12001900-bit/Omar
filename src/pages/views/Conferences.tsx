@@ -12,7 +12,6 @@ import {
   ChevronLeft, 
   Edit2, 
   Check, 
-  X,
   Link as LinkIcon,
   Search
 } from 'lucide-react';
@@ -29,6 +28,8 @@ import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 
+import { Conference } from '../../types';
+
 export default function Conferences() {
   const { conferences } = useConferences();
   const { hieas } = useHieas();
@@ -37,7 +38,7 @@ export default function Conferences() {
   const { user } = useAuth();
   
   const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedConf, setSelectedConf] = useState<any>(null);
+  const [selectedConf, setSelectedConf] = useState<Conference | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'desc' | 'agenda' | 'related'>('desc');
@@ -54,7 +55,7 @@ export default function Conferences() {
     goalId: '',
   });
 
-  const [editData, setEditData] = useState<any>({
+  const [editData, setEditData] = useState<Partial<Conference>>({
     name: '',
     startDate: '',
     endDate: '',
@@ -128,7 +129,7 @@ export default function Conferences() {
     }
   };
 
-  const openDeleteConfirm = (e: React.MouseEvent, conf: any) => {
+  const openDeleteConfirm = (e: React.MouseEvent, conf: Conference) => {
     e.stopPropagation();
     setDeleteConfirm({ isOpen: true, confId: conf.id, name: conf.name });
   };
@@ -380,7 +381,7 @@ export default function Conferences() {
                       ].map((tab) => (
                         <button
                           key={tab.id}
-                          onClick={() => setActiveTab(tab.id as any)}
+                          onClick={() => setActiveTab(tab.id as 'desc' | 'agenda' | 'related')}
                           className={`flex items-center gap-3 px-8 py-4 text-xs font-black uppercase tracking-widest transition-all relative ${
                             activeTab === tab.id ? 'text-brand-primary' : 'text-slate-500 hover:text-slate-300'
                           }`}
