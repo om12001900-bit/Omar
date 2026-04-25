@@ -494,7 +494,8 @@ export default function GoalsTargets() {
                               <h4 className="text-lg font-bold tracking-tight">الجدول الزمني المحكم</h4>
                            </div>
                            
-                           {isEditing ? (
+                           {/* Edit Mode & Not Completed */}
+                           {isEditing && editData.progress < 100 && (
                              <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                    <label className="text-[10px] text-slate-600 block px-4 uppercase font-black tracking-widest">تاريخ الانطلاق</label>
@@ -515,7 +516,10 @@ export default function GoalsTargets() {
                                    />
                                 </div>
                              </div>
-                           ) : (
+                           )}
+
+                           {/* View Mode & Not Completed */}
+                           {!isEditing && selectedGoal.progress < 100 && (
                              <div className="flex items-center justify-between p-6 bg-white/[0.02] rounded-none border border-white/5">
                                 <div className="flex flex-col gap-1">
                                    <span className="text-[9px] text-slate-600 font-black uppercase tracking-widest">نقطة البداية</span>
@@ -526,6 +530,14 @@ export default function GoalsTargets() {
                                    <span className="text-[9px] text-slate-600 font-black uppercase tracking-widest">الموعد المستهدف</span>
                                    <span className="text-xl font-black text-brand-primary font-display">{selectedGoal.endDate}</span>
                                 </div>
+                             </div>
+                           )}
+
+                           {/* Completed Mode */}
+                           {(isEditing ? editData.progress : selectedGoal.progress) === 100 && (
+                             <div className="flex flex-col items-center justify-center py-6 gap-3 text-brand-primary/60">
+                                <CheckCircle2 size={32} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">مستهدف مكتمل - الجدول الزمني مغلق</span>
                              </div>
                            )}
                         </div>

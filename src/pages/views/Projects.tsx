@@ -113,6 +113,7 @@ export default function Projects() {
       resetForm();
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.CREATE, 'projects');
     }
   };
 
@@ -127,6 +128,7 @@ export default function Projects() {
       setSelectedProject({ ...selectedProject, ...editData });
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${selectedProject.id}`);
     }
   };
 
@@ -137,6 +139,7 @@ export default function Projects() {
       setSelectedProject({ ...selectedProject, progress: val });
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${selectedProject.id}`);
     }
   };
 
@@ -907,15 +910,24 @@ export default function Projects() {
                             <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">الجدول الزمني</span>
                          </div>
                          <div className="space-y-4">
-                            <div className="flex justify-between items-center flex-row-reverse">
-                               <span className="text-[10px] text-slate-600 font-bold uppercase">البداية</span>
-                               <span className="text-lg font-black text-slate-300 font-display">{selectedProject.startDate || '---'}</span>
-                            </div>
-                            <div className="h-px bg-white/5 w-full" />
-                            <div className="flex justify-between items-center flex-row-reverse">
-                               <span className="text-[10px] text-slate-600 font-bold uppercase">النهاية</span>
-                               <span className="text-lg font-black text-brand-secondary font-display">{selectedProject.endDate || '---'}</span>
-                            </div>
+                            {selectedProject.status !== ProjectStatus.COMPLETED ? (
+                              <>
+                                <div className="flex justify-between items-center flex-row-reverse">
+                                   <span className="text-[10px] text-slate-600 font-bold uppercase">البداية</span>
+                                   <span className="text-lg font-black text-slate-300 font-display">{selectedProject.startDate || '---'}</span>
+                                </div>
+                                <div className="h-px bg-white/5 w-full" />
+                                <div className="flex justify-between items-center flex-row-reverse">
+                                   <span className="text-[10px] text-slate-600 font-bold uppercase">النهاية</span>
+                                   <span className="text-lg font-black text-brand-secondary font-display">{selectedProject.endDate || '---'}</span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-4 space-y-2 opacity-60">
+                                 <CheckCircle2 size={32} className="text-brand-secondary mb-1" />
+                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">مشروع منجز - لا يتطلب جدولاً زمنياً</span>
+                              </div>
+                            )}
                          </div>
                       </div>
 
@@ -1242,24 +1254,28 @@ export default function Projects() {
              </div>
 
              <div className="grid grid-cols-2 gap-8">
-               <div className="space-y-4">
-                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">موعد الإغلاق المستهدف</label>
+               <div className={`space-y-4 ${formData.status === ProjectStatus.COMPLETED ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">
+                    موعد الإغلاق المستهدف {formData.status === ProjectStatus.COMPLETED && '(اختياري)'}
+                  </label>
                   <input 
                     type="date" 
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-8 outline-none focus:border-brand-secondary text-slate-300 font-bold"
-                    required
+                    required={formData.status !== ProjectStatus.COMPLETED}
                   />
                </div>
-               <div className="space-y-4 text-right">
-                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">تاريخ الانطلاق</label>
+               <div className={`space-y-4 text-right ${formData.status === ProjectStatus.COMPLETED ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">
+                    تاريخ الانطلاق {formData.status === ProjectStatus.COMPLETED && '(اختياري)'}
+                  </label>
                   <input 
                     type="date" 
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-8 outline-none focus:border-brand-secondary text-slate-300 font-bold"
-                    required
+                    required={formData.status !== ProjectStatus.COMPLETED}
                   />
                </div>
              </div>

@@ -12,14 +12,9 @@ import { db } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { 
   collection, 
-  updateDoc, 
   doc, 
-  addDoc, 
   serverTimestamp,
-  writeBatch,
-  getDocs,
-  query,
-  where
+  writeBatch
 } from 'firebase/firestore';
 
 export default function Settings() {
@@ -174,7 +169,7 @@ export default function Settings() {
             delete cleanData.createdAt;
             delete cleanData.updatedAt;
 
-            const updatedData: Record<string, any> = { ...cleanData };
+            const updatedData: Record<string, unknown> = { ...cleanData };
             if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
               updatedData.hieaId = hieaIdMap[cleanData.hieaId];
             }
@@ -197,7 +192,7 @@ export default function Settings() {
             delete cleanData.createdAt;
             delete cleanData.updatedAt;
             
-            const updatedData: Record<string, any> = { ...cleanData };
+            const updatedData: Record<string, unknown> = { ...cleanData };
             if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
               updatedData.hieaId = hieaIdMap[cleanData.hieaId];
             }
@@ -222,7 +217,7 @@ export default function Settings() {
             delete cleanData.createdAt;
             delete cleanData.updatedAt;
 
-            const updatedData: Record<string, any> = { ...cleanData };
+            const updatedData: Record<string, unknown> = { ...cleanData };
             if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
               updatedData.hieaId = hieaIdMap[cleanData.hieaId];
             }
@@ -246,7 +241,7 @@ export default function Settings() {
         setErrorMessage('فشل استيراد البيانات. تأكد من صحة تنسيق الملف.');
         try {
           handleFirestoreError(error, OperationType.WRITE, 'bulk_import');
-        } catch (e) {
+        } catch {
           // Handled
         }
       } finally {
