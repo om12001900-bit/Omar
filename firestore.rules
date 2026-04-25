@@ -32,14 +32,14 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(incoming());
       allow update: if isOwner(userId) && isValidUser(incoming()) && 
-                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'phone', 'settings']);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'phoneNumber', 'settings', 'bio']);
       
       function isValidUser(data) {
         return data.uid == request.auth.uid &&
                data.displayName is string && data.displayName.size() <= 100 &&
-               (data.email == "" || (data.email is string && data.email.size() <= 255)) &&
-               (data.phone == "" || (data.phone is string && data.phone.size() <= 20)) &&
-               data.createdAt == request.time;
+               (data.get('email', '') is string && data.get('email', '').size() <= 255) &&
+               (data.get('phoneNumber', '') is string && data.get('phoneNumber', '').size() <= 30) &&
+               data.createdAt != null;
       }
     }
 

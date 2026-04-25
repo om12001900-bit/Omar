@@ -46,7 +46,7 @@ export default function Login() {
       await signInWithGoogle();
       navigate('/dashboard');
     } catch (err: any) {
-      setError('خطأ في تسجيل الدخول عبر جوجل.');
+      setError(err.message || 'خطأ في تسجيل الدخول عبر جوجل.');
       console.error(err);
     } finally {
       setLoading(false);
