@@ -2,29 +2,38 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, Mail, Lock, LogIn, Chrome, UserPlus, User } from 'lucide-react';
+import { Eye, Mail, Lock, LogIn, Chrome, UserPlus, User, Phone } from 'lucide-react';
 
 import { Logo } from '../components/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { loginLocally } = useAuth();
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
+  const { login, register } = useAuth();
   const navigate = useNavigate();
 
   const handleEmailAction = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    const identifier = authMethod === 'email' ? email : phone;
+    const isPhone = authMethod === 'phone';
+    
     try {
-      await loginLocally(email);
+      if (isSignUp) {
+        await register(identifier, isPhone, password, displayName);
+      } else {
+        await login(identifier, isPhone, password);
+      }
       navigate('/dashboard');
     } catch (err: any) {
-      setError('خطأ في تسجيل الدخول المحلي.');
+      setError(err.message || 'خطأ في العملية.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -32,8 +41,14 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    await loginLocally(`google_${Math.random().toString(36).substr(2, 5)}@gmail.com`);
-    navigate('/dashboard');
+    try {
+      // Mock Google Login
+      const mockEmail = `google_${Math.random().toString(36).substr(2, 5)}@gmail.com`;
+      await register(mockEmail, 'google-pass', 'Google User');
+      navigate('/dashboard');
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -62,6 +77,21 @@ export default function Login() {
         <div className="glass rounded-[2rem] p-8 md:p-10 border border-white/5 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-l from-brand-primary to-brand-secondary"></div>
 
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setAuthMethod('email')}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${authMethod === 'email' ? 'bg-brand-primary text-brand-dark' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+            >
+              البريد الإلكتروني
+            </button>
+            <button
+              onClick={() => setAuthMethod('phone')}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${authMethod === 'phone' ? 'bg-brand-primary text-brand-dark' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+            >
+              رقم الهاتف
+            </button>
+          </div>
+
           <form onSubmit={handleEmailAction} className="space-y-6">
             {isSignUp && (
               <motion.div 
@@ -84,20 +114,37 @@ export default function Login() {
               </motion.div>
             )}
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">البريد الإلكتروني</label>
-              <div className="relative group">
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-12 text-slate-100 placeholder:text-slate-700 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all group-hover:border-white/20"
-                  placeholder="admin@summit.sa"
-                  required
-                />
-                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 transition-colors group-focus-within:text-brand-primary" size={18} />
+            {authMethod === 'email' ? (
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">البريد الإلكتروني</label>
+                <div className="relative group">
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-12 text-slate-100 placeholder:text-slate-700 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all group-hover:border-white/20"
+                    placeholder="admin@summit.sa"
+                    required={authMethod === 'email'}
+                  />
+                  <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 transition-colors group-focus-within:text-brand-primary" size={18} />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">رقم الهاتف</label>
+                <div className="relative group">
+                  <input 
+                    type="tel" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-12 text-slate-100 placeholder:text-slate-700 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all group-hover:border-white/20 text-left"
+                    placeholder="+966 5X XXX XXXX"
+                    required={authMethod === 'phone'}
+                  />
+                  <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 transition-colors group-focus-within:text-brand-primary" size={18} />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center px-1">

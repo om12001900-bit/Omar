@@ -1,21 +1,11 @@
 {
-  "name": "القمة الاستراتيجية",
-  "short_name": "القمة",
-  "description": "منصة إدارة الأهداف والخطط الاستراتيجية",
+  "name": "O.V.9 - Vision Platform",
+  "short_name": "O.V.9",
+  "description": "Strategic Vision & Initiative Management Platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0b",
-  "theme_color": "#2dd4bf",
-  "icons": [
-    {
-      "src": "/logo.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "background_color": "#070708",
+  "theme_color": "#4ade80",
+  "dir": "rtl",
+  "lang": "ar"
 }

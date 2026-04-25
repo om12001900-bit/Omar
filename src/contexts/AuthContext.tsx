@@ -9,7 +9,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
-  loginLocally: (email: string) => Promise<void>;
+  login: (identifier: string, isPhone: boolean, password: string) => Promise<void>;
+  register: (identifier: string, isPhone: boolean, password: string, displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             uid: currentUser.uid,
             displayName: currentUser.displayName || 'مستخدم',
             email: currentUser.email || '',
+            phone: currentUser.phone || '',
             photoURL: '',
             createdAt: new Date().toISOString()
           };
@@ -65,13 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginLocally = async (email: string) => {
-    const mockUser = {
-      uid: 'local-user-123',
-      email: email,
-      displayName: email.split('@')[0]
-    };
-    localAuth.setUser(mockUser);
+  const login = async (identifier: string, isPhone: boolean, password: string) => {
+    localAuth.login(identifier, isPhone, password);
+  };
+  
+  const register = async (identifier: string, isPhone: boolean, password: string, displayName: string) => {
+    localAuth.register(identifier, isPhone, password, displayName);
   };
 
   const uploadAvatar = async (file: File) => {
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut, updateProfile, uploadAvatar, loginLocally }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut, updateProfile, uploadAvatar, login, register }}>
       {children}
     </AuthContext.Provider>
   );

@@ -51,5 +51,47 @@ export const localAuth = {
   logout: () => {
     localStorage.removeItem('auth_user');
     window.dispatchEvent(new Event('auth-state-change'));
+  },
+  register: (identifier: string, isPhone: boolean, password: string, displayName: string) => {
+    const users = localDB.getAll('users');
+    const existingUser = users.find((u: any) => isPhone ? u.phone === identifier : u.email === identifier);
+    
+    if (existingUser) {
+      throw new Error(isPhone ? 'رقم الهاتف مسجل بالفعل' : 'البريد الإلكتروني مسجل بالفعل');
+    }
+    
+    const newUser = {
+      uid: Math.random().toString(36).substr(2, 9),
+      email: isPhone ? '' : identifier,
+      phone: isPhone ? identifier : '',
+      password,
+      displayName,
+      createdAt: new Date().toISOString()
+    };
+    
+    localDB.add('users', newUser);
+    localAuth.setUser({
+      uid: newUser.uid,
+      email: newUser.email,
+      phone: newUser.phone,
+      displayName: newUser.displayName
+    });
+    return newUser;
+  },
+  login: (identifier: string, isPhone: boolean, password: string) => {
+    const users = localDB.getAll('users');
+    const user = users.find((u: any) => isPhone ? u.phone === identifier : u.email === identifier);
+    
+    if (!user || user.password !== password) {
+      throw new Error(isPhone ? 'رقم الهاتف أو كلمة المرور غير صحيحة' : 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
+    }
+    
+    localAuth.setUser({
+      uid: user.uid,
+      email: user.email,
+      phone: user.phone,
+      displayName: user.displayName
+    });
+    return user;
   }
 };
