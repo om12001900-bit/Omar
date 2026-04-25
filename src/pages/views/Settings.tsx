@@ -3,14 +3,21 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Settings as SettingsIcon, Shield, User, Bell, Database, Globe, ChevronLeft, Save, 
   Mail, Phone, Type, AlignLeft, Camera, Upload, Trash2, Palette, Download, 
-  CheckCircle2, AlertCircle, RefreshCw, Smartphone, Sun, Moon, Maximize2
+  CheckCircle2, AlertCircle, RefreshCw, Smartphone, Sun, Moon, Maximize2, FileInput
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
+import { useHieas, useProjects, useGoals, useConferences } from '../../hooks/useData';
+import { db } from '../../lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Settings() {
-  const { profile, updateProfile, uploadAvatar } = useAuth();
+  const { profile, updateProfile, uploadAvatar, user } = useAuth();
   const { settings, updateSettings } = useUI();
+  const { hieas } = useHieas();
+  const { projects } = useProjects();
+  const { goals } = useGoals();
+  const { conferences } = useConferences();
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -88,17 +95,118 @@ export default function Settings() {
 
   const handleDataExport = () => {
     const data = {
-      profile,
+      profile: {
+        displayName: profile?.displayName,
+        bio: profile?.bio,
+        phoneNumber: profile?.phoneNumber
+      },
+      hieas,
+      projects,
+      goals,
+      conferences,
       timestamp: new Date().toISOString(),
-      system: 'O.V.9 Quantum Tracker'
+      system: 'O.V.9 Quantum Tracker',
+      version: '1.0'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `OV9_Strategic_Export_${Date.now()}.json`;
+    a.download = `OV9_Strategic_Export_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
-    setSuccessMessage('تم تصدير البيانات بنجاح.');
+    setSuccessMessage('تم تصدير كافة البيانات الاستراتيجية بنجاح.');
+  };
+
+  const handleDataImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        setIsSaving(true);
+        setSuccessMessage('جاري معالجة استيراد البيانات وبناء الروابط الاستراتيجية...');
+
+        const hieaIdMap: Record<string, string> = {};
+        const projectIdMap: Record<string, string> = {};
+
+        // 1. Import HIEAs
+        if (data.hieas && Array.isArray(data.hieas)) {
+          for (const item of data.hieas) {
+            const { id: oldId, createdAt, updatedAt, ...cleanData } = item;
+            const docRef = await addDoc(collection(db, 'hieas'), {
+              ...cleanData,
+              ownerId: user.uid,
+              createdAt: serverTimestamp()
+            });
+            if (oldId) hieaIdMap[oldId] = docRef.id;
+          }
+        }
+
+        // 2. Import Projects
+        if (data.projects && Array.isArray(data.projects)) {
+          for (const item of data.projects) {
+            const { id: oldId, createdAt, updatedAt, ...cleanData } = item;
+            const updatedData = { ...cleanData };
+            
+            // Map parent HIEA if exists
+            if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
+              updatedData.hieaId = hieaIdMap[cleanData.hieaId];
+            }
+
+            const docRef = await addDoc(collection(db, 'projects'), {
+              ...updatedData,
+              ownerId: user.uid,
+              createdAt: serverTimestamp()
+            });
+            if (oldId) projectIdMap[oldId] = docRef.id;
+          }
+        }
+
+        // 3. Import Goals
+        if (data.goals && Array.isArray(data.goals)) {
+          for (const item of data.goals) {
+            const { id: oldId, createdAt, updatedAt, ...cleanData } = item;
+            const updatedData = { ...cleanData };
+
+            // Map parents
+            if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
+              updatedData.hieaId = hieaIdMap[cleanData.hieaId];
+            }
+            if (cleanData.projectId && projectIdMap[cleanData.projectId]) {
+              updatedData.projectId = projectIdMap[cleanData.projectId];
+            }
+
+            await addDoc(collection(db, 'goals'), {
+              ...updatedData,
+              ownerId: user.uid,
+              createdAt: serverTimestamp()
+            });
+          }
+        }
+
+        // 4. Import Conferences
+        if (data.conferences && Array.isArray(data.conferences)) {
+          for (const item of data.conferences) {
+            const { id: oldId, createdAt, updatedAt, ...cleanData } = item;
+            await addDoc(collection(db, 'conferences'), {
+              ...cleanData,
+              ownerId: user.uid,
+              createdAt: serverTimestamp()
+            });
+          }
+        }
+
+        setSuccessMessage('تم استيراد كافة البيانات وبناء الروابط بنجاح.');
+      } catch (error) {
+        console.error("Import error:", error);
+        setErrorMessage('فشل استيراد البيانات. تأكد من صحة تنسيق الملف.');
+      } finally {
+        setIsSaving(false);
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -560,17 +668,27 @@ export default function Settings() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-8 bg-white/5 border border-white/10 space-y-4 text-right group hover:border-brand-primary transition-all">
                       <Download className="text-brand-primary opacity-50 group-hover:opacity-100 transition-all mr-auto" size={32} />
-                      <h4 className="text-sm font-black text-white">تصدير النسخة الاحتياطية</h4>
-                      <p className="text-[10px] text-slate-500 leading-relaxed font-bold italic">تحميل نسخة شاملة من بياناتك الاستراتيجية بصيغة JSON لاستخدامها في الأنظمة الخارجية.</p>
+                      <h4 className="text-sm font-black text-white">تصدير كافة البيانات</h4>
+                      <p className="text-[10px] text-slate-500 leading-relaxed font-bold italic">تحميل نسخة شاملة من الهيئات، المشاريع، والأهداف بصيغة JSON لنقلها إلى حساب آخر.</p>
                       <button onClick={handleDataExport} className="w-full py-3 bg-white/10 text-slate-300 font-bold text-xs uppercase hover:bg-brand-primary hover:text-brand-dark transition-all">تصدير الآن</button>
                     </div>
 
-                    <div className="p-8 bg-white/5 border border-white/10 space-y-4 text-right group hover:border-red-500/50 transition-all opacity-50">
-                      <Trash2 className="text-red-500 opacity-50 transition-all mr-auto" size={32} />
-                      <h4 className="text-sm font-black text-white">حذف كافة البيانات</h4>
-                      <p className="text-[10px] text-slate-500 leading-relaxed font-bold italic">هذا الإجراء سيقوم بمسح كافة السجلات الاستراتيجية من النظام ولا يمكن التراجع عنه.</p>
-                      <button className="w-full py-3 bg-red-500/20 text-red-500 font-bold text-xs uppercase cursor-not-allowed">حذف النظام بالكامل</button>
+                    <div className="p-8 bg-white/5 border border-white/10 space-y-4 text-right group hover:border-brand-primary transition-all">
+                      <Upload className="text-brand-primary opacity-50 group-hover:opacity-100 transition-all mr-auto" size={32} />
+                      <h4 className="text-sm font-black text-white">استيراد البيانات</h4>
+                      <p className="text-[10px] text-slate-500 leading-relaxed font-bold italic">رفع ملف JSON قمت بتصديره سابقاً لإضافة البيانات إلى هذا الحساب الاستراتيجي.</p>
+                      <label className="w-full py-3 bg-white/10 text-slate-300 font-bold text-xs uppercase hover:bg-brand-primary hover:text-brand-dark transition-all cursor-pointer flex items-center justify-center">
+                        إرفاق واستيراد
+                        <input type="file" accept=".json" className="hidden" onChange={handleDataImport} />
+                      </label>
                     </div>
+                  </div>
+
+                  <div className="p-8 bg-red-500/5 border border-red-500/10 space-y-4 text-right group hover:border-red-500/50 transition-all">
+                    <Trash2 className="text-red-500 opacity-50 transition-all mr-auto" size={32} />
+                    <h4 className="text-sm font-black text-white">حذف كافة البيانات</h4>
+                    <p className="text-[10px] text-slate-500 leading-relaxed font-bold italic">هذا الإجراء سيقوم بمسح كافة السجلات الاستراتيجية من النظام ولا يمكن التراجع عنه.</p>
+                    <button className="w-full py-3 bg-red-500/10 text-red-500 font-bold text-xs uppercase hover:bg-red-500 hover:text-white transition-all">حذف النظام بالكامل</button>
                   </div>
                   
                   <div className="p-6 border border-brand-primary/10 bg-brand-primary/[0.01]">
