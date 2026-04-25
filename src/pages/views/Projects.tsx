@@ -62,7 +62,7 @@ export default function Projects() {
     endDate: '',
     status: ProjectStatus.IN_PROGRESS,
     progress: 0,
-    hieaId: '',
+    hieaIds: [] as string[],
     goalId: '',
     tags: [] as string[],
     icon: 'Briefcase',
@@ -76,7 +76,7 @@ export default function Projects() {
     status: ProjectStatus.IN_PROGRESS,
     progress: 0,
     milestones: [] as Milestone[],
-    hieaId: '',
+    hieaIds: [] as string[],
     goalId: '',
     tags: [] as string[],
     icon: 'Briefcase',
@@ -90,7 +90,7 @@ export default function Projects() {
       endDate: '',
       status: ProjectStatus.IN_PROGRESS,
       progress: 0,
-      hieaId: '',
+      hieaIds: [],
       goalId: '',
       tags: [],
       icon: 'Briefcase',
@@ -204,6 +204,10 @@ export default function Projects() {
       setFormData({ ...formData, tags: formData.tags.filter((t: string) => t !== tag) });
     }
   };
+
+  const selectedProjectHieaIds = selectedProject?.hieaIds || (selectedProject?.hieaId ? [selectedProject.hieaId] : []);
+  const selectedProjectHieas = hieas.filter(h => selectedProjectHieaIds.includes(h.id));
+  const projectThemeColor = selectedProjectHieas[0]?.color || '#2dd4bf';
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden text-right">
@@ -345,8 +349,9 @@ export default function Projects() {
                         )
                       )
                       .map((project) => {
-                        const hiea = hieas.find(h => h.id === project.hieaId);
-                        const themeColor = hiea?.color || '#2dd4bf';
+                        const projectHieaIds = project.hieaIds || (project.hieaId ? [project.hieaId] : []);
+                        const projectHieas = hieas.filter(h => projectHieaIds.includes(h.id));
+                        const themeColor = projectHieas[0]?.color || '#2dd4bf';
 
                         return (
                           <motion.div
@@ -365,7 +370,7 @@ export default function Projects() {
                                 status: project.status || ProjectStatus.IN_PROGRESS,
                                 progress: project.progress || 0,
                                 milestones: project.milestones || [],
-                                hieaId: project.hieaId || '',
+                                hieaIds: project.hieaIds || (project.hieaId ? [project.hieaId] : []),
                                 goalId: project.goalId || '',
                                 tags: project.tags || [],
                                 icon: project.icon || 'Briefcase',
@@ -376,7 +381,7 @@ export default function Projects() {
                             <div 
                               className="relative h-full bg-white/[0.02] border border-white/5 p-8 transition-all hover:bg-white/[0.04] hover:translate-y-[-4px] overflow-hidden"
                               style={{ 
-                                borderColor: hiea?.color ? `${hiea.color}33` : undefined,
+                                borderColor: themeColor ? `${themeColor}33` : undefined,
                               }}
                             >
                               {/* Status Accent Line */}
@@ -486,7 +491,7 @@ export default function Projects() {
                                          status: project.status || ProjectStatus.IN_PROGRESS,
                                          progress: project.progress || 0,
                                          milestones: project.milestones || [],
-                                         hieaId: project.hieaId || '',
+                                         hieaIds: project.hieaIds || (project.hieaId ? [project.hieaId] : []),
                                          goalId: project.goalId || '',
                                          tags: project.tags || [],
                                          icon: project.icon || 'Briefcase',
@@ -525,7 +530,7 @@ export default function Projects() {
                         status: project.status || ProjectStatus.IN_PROGRESS,
                         progress: project.progress || 0,
                         milestones: project.milestones || [],
-                        hieaId: project.hieaId || '',
+                        hieaIds: project.hieaIds || (project.hieaId ? [project.hieaId] : []),
                         goalId: project.goalId || '',
                         tags: project.tags || [],
                         icon: project.icon || 'Briefcase',
@@ -579,8 +584,12 @@ export default function Projects() {
                   <div className="flex flex-col md:flex-row items-center lg:items-start justify-between gap-6">
                     <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-right">
                         <div 
-                          className="w-16 h-16 md:w-20 md:h-20 rounded-none flex items-center justify-center border-2 transition-all shrink-0 bg-brand-secondary/10 border-brand-secondary/40 text-brand-secondary shadow-[0_15px_30px_-10px_rgba(45,212,191,0.3)]"
-                          style={{ borderColor: hieas.find(h => h.id === selectedProject.hieaId)?.color, color: hieas.find(h => h.id === selectedProject.hieaId)?.color, backgroundColor: hieas.find(h => h.id === selectedProject.hieaId)?.color ? `${hieas.find(h => h.id === selectedProject.hieaId)?.color}1a` : undefined }}
+                          className="w-16 h-16 md:w-20 md:h-20 rounded-none flex items-center justify-center border-2 transition-all shrink-0 shadow-[0_15px_30px_-10px_rgba(45,212,191,0.3)]"
+                          style={{ 
+                            borderColor: projectThemeColor, 
+                            color: projectThemeColor, 
+                            backgroundColor: `${projectThemeColor}1a`
+                          }}
                         >
                           <ProjectIcon name={isEditing ? editData.icon : selectedProject.icon} size={32} />
                         </div>
@@ -602,14 +611,35 @@ export default function Projects() {
                                 <option value={ProjectStatus.IN_PROGRESS} className="bg-slate-900">قيد التنفيذ</option>
                                 <option value={ProjectStatus.COMPLETED} className="bg-slate-900">مكتمل</option>
                               </select>
-                              <select 
-                                value={editData.hieaId}
-                                onChange={(e) => setEditData({ ...editData, hieaId: e.target.value })}
-                                className="bg-white/5 border border-white/10 rounded-none px-6 py-2 text-sm text-slate-300 outline-none focus:border-brand-secondary w-full md:w-[400px] appearance-none"
-                              >
-                                <option value="" className="bg-slate-900">ربط بهيئة جديدة...</option>
-                                {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
-                              </select>
+                              <div className="space-y-2">
+                                <label className="block text-[10px] font-black uppercase text-slate-600 tracking-widest px-2">الارتباط بالهيئات</label>
+                                <div className="flex flex-wrap gap-2 p-4 bg-white/5 border border-white/10 w-full md:w-[400px]">
+                                  {hieas.map(h => {
+                                    const isSelected = editData.hieaIds?.includes(h.id);
+                                    return (
+                                      <button
+                                        key={h.id}
+                                        type="button"
+                                        onClick={() => {
+                                          const currentIds = editData.hieaIds || [];
+                                          const newHieaIds = isSelected 
+                                            ? currentIds.filter(id => id !== h.id)
+                                            : [...currentIds, h.id];
+                                          setEditData({ ...editData, hieaIds: newHieaIds });
+                                        }}
+                                        className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all ${
+                                          isSelected 
+                                            ? 'bg-brand-secondary text-brand-dark border-brand-secondary' 
+                                            : 'bg-white/5 text-slate-500 border-white/10 hover:border-white/20'
+                                        }`}
+                                      >
+                                        {h.name}
+                                      </button>
+                                    );
+                                  })}
+                                  {hieas.length === 0 && <span className="text-[9px] text-slate-600 uppercase font-black">لا توجد هيئات</span>}
+                                </div>
+                              </div>
                               <select 
                                 value={editData.goalId}
                                 onChange={(e) => setEditData({ ...editData, goalId: e.target.value })}
@@ -698,15 +728,16 @@ export default function Projects() {
                             <div className="space-y-3">
                               <h2 className="text-3xl md:text-5xl font-display font-black text-white leading-tight tracking-tight mb-2">{selectedProject.name}</h2>
                               <div className="flex flex-wrap gap-2 justify-center md:justify-start flex-row-reverse mb-4">
-                                {selectedProject.hieaId && (
+                                {selectedProjectHieas.map(h => (
                                   <motion.p 
+                                    key={h.id}
                                     initial={{ opacity: 0, x: 10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     className="text-[10px] text-brand-primary font-black uppercase tracking-widest bg-brand-primary/10 border border-brand-primary/20 px-3 py-1.5"
                                   >
-                                    {hieas.find(h => h.id === selectedProject.hieaId)?.name}
+                                    {h.name}
                                   </motion.p>
-                                )}
+                                ))}
                                 {selectedProject.goalId && (
                                   <motion.p 
                                     initial={{ opacity: 0, x: 10 }}
@@ -1024,11 +1055,17 @@ export default function Projects() {
                                     <h5 className="text-lg font-bold text-slate-200">الدعم الهيكلي</h5>
                                  </div>
                               </div>
-                              <div className="mt-8">
-                                 <p className="text-xl font-display font-black text-white leading-snug">
-                                   {hieas.find(h => h.id === selectedProject.hieaId)?.name || 'غير مرتبط بنطاق حوكمة'}
-                                 </p>
-                              </div>
+                               <div className="mt-8 flex flex-wrap gap-2 justify-end">
+                                  {selectedProjectHieas.length > 0 ? (
+                                    selectedProjectHieas.map(h => (
+                                      <span key={h.id} className="text-sm font-display font-black text-white bg-white/5 px-3 py-1 border border-white/10 uppercase tracking-tighter">
+                                        {h.name}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <p className="text-xl font-display font-black text-slate-500">غير مرتبط بنطاق حوكمة</p>
+                                  )}
+                               </div>
                            </div>
 
                            {/* Goal Context */}
@@ -1191,15 +1228,32 @@ export default function Projects() {
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                    <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">الارتباط بالهيئة</label>
-                    <select 
-                      value={formData.hieaId}
-                      onChange={(e) => setFormData({ ...formData, hieaId: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-none py-4 px-10 outline-none focus:border-brand-secondary text-slate-300 appearance-none font-bold text-right"
-                    >
-                      <option value="" className="bg-slate-900">اختر الهيئة (اختياري)...</option>
-                      {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
-                    </select>
+                    <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">الارتباط بالهيئات (يمكن اختيار أكثر من هيئة)</label>
+                    <div className="flex flex-wrap gap-2 p-4 bg-white/5 border border-white/10">
+                      {hieas.map(h => {
+                        const isSelected = formData.hieaIds.includes(h.id);
+                        return (
+                          <button
+                            key={h.id}
+                            type="button"
+                            onClick={() => {
+                              const newHieaIds = isSelected 
+                                ? formData.hieaIds.filter(id => id !== h.id)
+                                : [...formData.hieaIds, h.id];
+                              setFormData({ ...formData, hieaIds: newHieaIds });
+                            }}
+                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border transition-all ${
+                              isSelected 
+                                ? 'bg-brand-secondary text-brand-dark border-brand-secondary' 
+                                : 'bg-white/5 text-slate-500 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {h.name}
+                          </button>
+                        );
+                      })}
+                      {hieas.length === 0 && <span className="text-[10px] text-slate-600 uppercase font-black px-2">لا توجد هيئات متاحة</span>}
+                    </div>
                 </div>
                 <div className="space-y-4">
                     <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">الارتباط بالهدف</label>

@@ -81,6 +81,7 @@ export interface Project {
   progress: number;
   milestones: Milestone[];
   hieaId?: string;
+  hieaIds?: string[];
   goalId?: string;
   tags?: string[];
   icon?: string;

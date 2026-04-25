@@ -18,7 +18,7 @@ import Modal from '../../components/Modal';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
-import { Hiea } from '../../types';
+import { Hiea, Project } from '../../types';
 
 export default function Hieas() {
   const { hieas } = useHieas();
@@ -227,7 +227,11 @@ export default function Hieas() {
                   })
                   .map((hiea, index) => {
                     const relatedGoals = goals.filter(g => (hiea.goalIds || []).includes(g.id) || g.hieaId === hiea.id);
-                    const relatedProjects = projects.filter(p => goals.some(g => (g.hieaId === hiea.id && g.projectId === p.id)));
+                    const getProjectHieaIds = (p: Project) => p.hieaIds || (p.hieaId ? [p.hieaId] : []);
+                    const relatedProjects = projects.filter(p => 
+                      getProjectHieaIds(p).includes(hiea.id) || 
+                      goals.some(g => g.hieaId === hiea.id && g.projectId === p.id)
+                    );
 
                     return (
                       <motion.div
@@ -690,7 +694,13 @@ export default function Hieas() {
                       <div className="absolute top-0 left-0 w-24 h-24 bg-brand-secondary/5 -translate-x-12 -translate-y-12 rotate-45" />
                       <div className="flex items-center justify-between relative z-10 text-right">
                          <div className="text-left">
-                            <span className="text-4xl font-display font-black text-white/5 opacity-40">{projects.filter(p => goals.some(g => g.hieaId === selectedHiea.id && g.projectId === p.id)).length}</span>
+                            <span className="text-4xl font-display font-black text-white/5 opacity-40">
+                              {projects.filter(p => {
+                                const projectHieaIds = p.hieaIds || (p.hieaId ? [p.hieaId] : []);
+                                return projectHieaIds.includes(selectedHiea.id) || 
+                                       goals.some(g => g.hieaId === selectedHiea.id && g.projectId === p.id);
+                              }).length}
+                            </span>
                          </div>
                         <div className="flex items-center gap-4 flex-row-reverse">
                             <div className="w-12 h-12 rounded-none bg-brand-secondary/10 flex items-center justify-center text-brand-secondary shadow-[0_0_15px_rgba(45,212,191,0.1)]">
@@ -704,7 +714,11 @@ export default function Hieas() {
                       </div>
                       
                       <div className="grid grid-cols-1 gap-3 relative z-10">
-                          {projects.filter(p => goals.some(g => g.hieaId === selectedHiea.id && g.projectId === p.id)).map(p => (
+                          {projects.filter(p => {
+                            const projectHieaIds = p.hieaIds || (p.hieaId ? [p.hieaId] : []);
+                            return projectHieaIds.includes(selectedHiea.id) || 
+                                   goals.some(g => g.hieaId === selectedHiea.id && g.projectId === p.id);
+                          }).map(p => (
                              <motion.button 
                                key={p.id} 
                                whileHover={{ x: -10 }}

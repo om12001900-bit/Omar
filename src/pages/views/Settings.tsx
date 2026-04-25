@@ -173,6 +173,9 @@ export default function Settings() {
             if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
               updatedData.hieaId = hieaIdMap[cleanData.hieaId];
             }
+            if (cleanData.hieaIds && Array.isArray(cleanData.hieaIds)) {
+              updatedData.hieaIds = (cleanData.hieaIds as string[]).map((id: string) => hieaIdMap[id] || id);
+            }
 
             const docRef = doc(collection(db, 'projects'));
             batch.set(docRef, {
