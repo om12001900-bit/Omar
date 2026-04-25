@@ -18,6 +18,7 @@ import {
   Settings as SettingsIcon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePWA } from '../hooks/usePWA';
 
 import Overview from './views/Overview';
 import GoalsTargets from './views/GoalsTargets';
@@ -32,6 +33,7 @@ import { InstallPWA } from '../components/InstallPWA';
 
 export default function Dashboard() {
   const { profile, signOut } = useAuth();
+  const { isStandalone } = usePWA();
   const location = useLocation();
   const currentPath = location.pathname;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -107,8 +109,12 @@ export default function Dashboard() {
         {/* Right Side: Platform Branding */}
         <div className="flex items-center gap-2 md:gap-4 text-left">
           <div className="flex flex-col items-end">
-            <span className="text-lg md:text-2xl font-display font-black tracking-tighter text-white leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">O.V.9 Control</span>
-            <span className="text-[10px] md:text-xs text-brand-primary font-black uppercase tracking-[0.3em] mt-1">Strategic Platform</span>
+            <span className="text-lg md:text-2xl font-display font-black tracking-tighter text-white leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+              {isStandalone ? "VISION STRATEGIC" : "O.V.9 CONTROL"}
+            </span>
+            <span className="text-[10px] md:text-xs text-brand-primary font-black uppercase tracking-[0.3em] mt-1">
+              {isStandalone ? "QUANTUM TRACKER" : "STRATEGIC PLATFORM"}
+            </span>
           </div>
           <motion.div 
             whileHover={{ scale: 1.05 }}

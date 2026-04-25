@@ -3,8 +3,11 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, Target, Layers, Briefcase, Eye } from 'lucide-react';
 import { Logo } from '../components/Logo';
+import { usePWA } from '../hooks/usePWA';
 
 export default function Landing() {
+  const { isStandalone } = usePWA();
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-brand-dark">
       {/* Background Decor */}
@@ -70,8 +73,12 @@ export default function Landing() {
                <div className="z-10 text-center flex flex-col items-center">
                   <Logo className="scale-[3]" showText={false} />
                   <div className="mt-20">
-                    <div className="text-8xl font-display font-extrabold text-white mb-2 drop-shadow-[0_0_30px_rgba(74,222,128,0.3)]">O.V.9</div>
-                    <div className="text-brand-primary tracking-[0.5em] text-xl font-bold uppercase">Vision Platform</div>
+                    <div className="text-8xl font-display font-extrabold text-white mb-2 drop-shadow-[0_0_30px_rgba(74,222,128,0.3)]">
+                      {isStandalone ? "VISION" : "O.V.9"}
+                    </div>
+                    <div className="text-brand-primary tracking-[0.5em] text-xl font-bold uppercase">
+                      {isStandalone ? "Quantum Tracker" : "Vision Platform"}
+                    </div>
                   </div>
                </div>
             </div>
