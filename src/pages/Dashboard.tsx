@@ -28,6 +28,7 @@ import Calendar from './views/Calendar';
 import Settings from './views/Settings';
 
 import { Logo } from '../components/Logo';
+import { InstallPWA } from '../components/InstallPWA';
 
 export default function Dashboard() {
   const { profile, signOut } = useAuth();
@@ -83,6 +84,8 @@ export default function Dashboard() {
           </div>
 
           <div className="hidden md:flex items-center gap-2 mr-4 border-r border-white/10 pr-4">
+            <InstallPWA />
+            
             <button 
               onClick={() => confirm('هل تريد تسجيل الخروج؟') && signOut()}
               className="w-9 h-9 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all text-slate-500"
@@ -192,6 +195,9 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-auto pt-8 border-t border-white/5 space-y-4">
+              <div className="flex justify-center mb-2">
+                <InstallPWA />
+              </div>
               <div className="flex items-center gap-4 p-4 glass rounded-2xl border border-white/5">
                 <div className="w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center font-black text-xl text-brand-dark">
                   {profile?.displayName?.charAt(0) || 'U'}
