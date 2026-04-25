@@ -15,7 +15,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
-  const { login, register } = useAuth();
+  const { login, register, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleEmailAction = async (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ export default function Login() {
       }
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'خطأ في العملية.');
+      setError(err.message || 'خطأ في العملية. يرجى استخدام تسجيل الدخول عبر جوجل.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -41,13 +41,15 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
     try {
-      // Mock Google Login
-      const mockEmail = `google_${Math.random().toString(36).substr(2, 5)}@gmail.com`;
-      await register(mockEmail, 'google-pass', 'Google User');
+      await signInWithGoogle();
       navigate('/dashboard');
-    } catch (err) {
+    } catch (err: any) {
+      setError('خطأ في تسجيل الدخول عبر جوجل.');
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 

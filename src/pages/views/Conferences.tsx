@@ -17,7 +17,15 @@ import {
   Search
 } from 'lucide-react';
 import { useConferences, useHieas, useProjects, useGoals } from '../../hooks/useData';
-import { localDB } from '../../services/localDB';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 
@@ -83,9 +91,10 @@ export default function Conferences() {
     if (!user) return;
 
     try {
-      localDB.add('conferences', {
+      await addDoc(collection(db, 'conferences'), {
         ...formData,
         ownerId: user.uid,
+        createdAt: serverTimestamp(),
       });
       setModalOpen(false);
       resetForm();
@@ -97,7 +106,10 @@ export default function Conferences() {
   const handleUpdate = async () => {
     if (!selectedConf) return;
     try {
-      localDB.update('conferences', selectedConf.id, editData);
+      await updateDoc(doc(db, 'conferences', selectedConf.id), {
+        ...editData,
+        updatedAt: serverTimestamp()
+      });
       setIsEditing(false);
       setSelectedConf({ ...selectedConf, ...editData });
     } catch (err) {
@@ -108,7 +120,7 @@ export default function Conferences() {
   const deleteConf = async () => {
     if (!deleteConfirm.confId) return;
     try {
-      localDB.delete('conferences', deleteConfirm.confId);
+      await deleteDoc(doc(db, 'conferences', deleteConfirm.confId));
       if (selectedConf?.id === deleteConfirm.confId) setSelectedConf(null);
       setDeleteConfirm({ isOpen: false, confId: null, name: '' });
     } catch (err) {

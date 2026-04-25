@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- User Profiles ---
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'phone', 'settings']);
+      
+      function isValidUser(data) {
+        return data.uid == request.auth.uid &&
+               data.displayName is string && data.displayName.size() <= 100 &&
+               (data.email == "" || (data.email is string && data.email.size() <= 255)) &&
+               (data.phone == "" || (data.phone is string && data.phone.size() <= 20)) &&
+               data.createdAt == request.time;
+      }
+    }
+
+    // --- Strategic Goals ---
+    match /goals/{goalId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(incoming().ownerId) && isValidGoal(incoming());
+      allow update: if isOwner(existing().ownerId) && isValidGoal(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId);
+
+      function isValidGoal(data) {
+        return data.ownerId == request.auth.uid &&
+               data.name is string && data.name.size() <= 200 &&
+               data.type in ['objective', 'target'] &&
+               data.category in ['OV9', 'S15'] &&
+               data.createdAt != null;
+      }
+    }
+
+    // --- Strategic Authorities (Hieas) ---
+    match /hieas/{hieaId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(incoming().ownerId) && isValidHiea(incoming());
+      allow update: if isOwner(existing().ownerId) && isValidHiea(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId);
+
+      function isValidHiea(data) {
+        return data.ownerId == request.auth.uid &&
+               data.name is string && data.name.size() <= 200 &&
+               data.createdAt != null;
+      }
+    }
+
+    // --- Strategic Projects ---
+    match /projects/{projectId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(incoming().ownerId) && isValidProject(incoming());
+      allow update: if isOwner(existing().ownerId) && isValidProject(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId);
+
+      function isValidProject(data) {
+        return data.ownerId == request.auth.uid &&
+               data.name is string && data.name.size() <= 200 &&
+               data.status in ['upcoming', 'in-progress', 'completed'] &&
+               data.createdAt != null;
+      }
+    }
+
+    // --- Strategic Conferences ---
+    match /conferences/{conferenceId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(incoming().ownerId) && isValidConference(incoming());
+      allow update: if isOwner(existing().ownerId) && isValidConference(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId);
+
+      function isValidConference(data) {
+        return data.ownerId == request.auth.uid &&
+               data.name is string && data.name.size() <= 200 &&
+               data.createdAt != null;
+      }
+    }
+
+    // --- Calendar Events ---
+    match /calendar_events/{eventId} {
+      allow get: if isOwner(existing().ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(incoming().ownerId) && isValidEvent(incoming());
+      allow update: if isOwner(existing().ownerId) && isValidEvent(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId);
+
+      function isValidEvent(data) {
+        return data.ownerId == request.auth.uid &&
+               data.title is string && data.title.size() <= 200 &&
+               data.type in ['meeting', 'milestone', 'deadline', 'other'] &&
+               data.priority in ['low', 'medium', 'high', 'critical'] &&
+               data.createdAt != null;
+      }
+    }
+  }
+}

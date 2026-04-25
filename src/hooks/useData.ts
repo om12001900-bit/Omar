@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot,
+  orderBy
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Goal, Hiea, Project, Conference } from '../types';
-import { localDB } from '../services/localDB';
 
 export function useGoals() {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -11,16 +18,22 @@ export function useGoals() {
   useEffect(() => {
     if (!user) return;
     
-    const fetchData = () => {
-      const allGoals = localDB.getAll('goals');
-      // Filter by user if necessary, but for local simulation we might want all or user-specific
-      setGoals(allGoals.filter((g: any) => g.ownerId === user.uid));
-      setLoading(false);
-    };
+    const q = query(
+      collection(db, 'goals'), 
+      where('ownerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
 
-    fetchData();
-    window.addEventListener('local-storage-update', fetchData);
-    return () => window.removeEventListener('local-storage-update', fetchData);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Goal[];
+      setGoals(data);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching goals:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   return { goals, loading };
@@ -34,15 +47,22 @@ export function useHieas() {
   useEffect(() => {
     if (!user) return;
     
-    const fetchData = () => {
-      const allHieas = localDB.getAll('hieas');
-      setHieas(allHieas.filter((h: any) => h.ownerId === user.uid));
-      setLoading(false);
-    };
+    const q = query(
+      collection(db, 'hieas'), 
+      where('ownerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
 
-    fetchData();
-    window.addEventListener('local-storage-update', fetchData);
-    return () => window.removeEventListener('local-storage-update', fetchData);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Hiea[];
+      setHieas(data);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching hieas:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   return { hieas, loading };
@@ -56,15 +76,22 @@ export function useProjects() {
   useEffect(() => {
     if (!user) return;
     
-    const fetchData = () => {
-      const allProjects = localDB.getAll('projects');
-      setProjects(allProjects.filter((p: any) => p.ownerId === user.uid));
-      setLoading(false);
-    };
+    const q = query(
+      collection(db, 'projects'), 
+      where('ownerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
 
-    fetchData();
-    window.addEventListener('local-storage-update', fetchData);
-    return () => window.removeEventListener('local-storage-update', fetchData);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
+      setProjects(data);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching projects:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   return { projects, loading };
@@ -78,15 +105,22 @@ export function useConferences() {
   useEffect(() => {
     if (!user) return;
     
-    const fetchData = () => {
-      const allConfs = localDB.getAll('conferences');
-      setConferences(allConfs.filter((c: any) => c.ownerId === user.uid));
-      setLoading(false);
-    };
+    const q = query(
+      collection(db, 'conferences'), 
+      where('ownerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
 
-    fetchData();
-    window.addEventListener('local-storage-update', fetchData);
-    return () => window.removeEventListener('local-storage-update', fetchData);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Conference[];
+      setConferences(data);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching conferences:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   return { conferences, loading };

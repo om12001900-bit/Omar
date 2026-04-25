@@ -2,22 +2,33 @@
   "entities": {
     "UserProfile": {
       "title": "User Profile",
-      "description": "User account information and settings",
+      "description": "Stores user identification, preferences and settings",
       "type": "object",
       "properties": {
+        "uid": { "type": "string" },
         "displayName": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
         "photoURL": { "type": "string" },
-        "isAdmin": { "type": "boolean" },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "themeColor": { "type": "string" },
+            "darkMode": { "type": "boolean" },
+            "fontSize": { "type": "string", "enum": ["small", "medium", "large"] },
+            "borderRadius": { "type": "string", "enum": ["none", "small", "medium", "full"] }
+          }
+        },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["email", "createdAt"]
+      "required": ["uid", "displayName", "createdAt"]
     },
     "Goal": {
-      "title": "Goal or Target",
-      "description": "An objective or target within the vision",
+      "title": "Goal",
+      "description": "Strategic goal or target",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "name": { "type": "string" },
         "type": { "type": "string", "enum": ["objective", "target"] },
         "startDate": { "type": "string", "format": "date" },
@@ -25,139 +36,113 @@
         "hieaId": { "type": "string" },
         "projectId": { "type": "string" },
         "category": { "type": "string", "enum": ["OV9", "S15"] },
-        "status": { "type": "string", "enum": ["pending", "completed", "in-progress"] },
         "progress": { "type": "number" },
-        "milestones": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "number" },
-              "title": { "type": "string" },
-              "date": { "type": "string", "format": "date" },
-              "completed": { "type": "boolean" }
-            }
-          }
-        },
         "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "type", "startDate", "endDate", "hieaId", "category", "ownerId"]
+      "required": ["name", "type", "ownerId", "createdAt"]
     },
     "Hiea": {
-      "title": "Hiea Entity",
-      "description": "An administrative or thematic entity (الهئ)",
+      "title": "Hiea",
+      "description": "Strategic entity/authority",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "name": { "type": "string" },
-        "color": { "type": "string", "description": "Custom hex color accent" },
-        "laws": { "type": "string", "description": "HTML content for laws" },
-        "procedures": { "type": "string", "description": "HTML content for procedures" },
-        "achievements": { "type": "string", "description": "HTML content for achievements" },
+        "laws": { "type": "string" },
+        "procedures": { "type": "string" },
+        "achievements": { "type": "string" },
         "logoUrl": { "type": "string" },
-        "goalIds": { 
-          "type": "array", 
-          "items": { "type": "string" } 
-        },
+        "color": { "type": "string" },
+        "progress": { "type": "number" },
         "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "ownerId"]
+      "required": ["name", "ownerId", "createdAt"]
     },
     "Project": {
-      "title": "Project (Al-Mish)",
-      "description": "A specific project (المشروع)",
+      "title": "Project",
+      "description": "Strategic project",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "name": { "type": "string" },
         "description": { "type": "string" },
         "startDate": { "type": "string", "format": "date" },
         "endDate": { "type": "string", "format": "date" },
         "status": { "type": "string", "enum": ["upcoming", "in-progress", "completed"] },
         "progress": { "type": "number" },
-        "milestones": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "title": { "type": "string" },
-              "completed": { "type": "boolean" },
-              "dueDate": { "type": "string", "format": "date" }
-            }
-          }
-        },
+        "hieaId": { "type": "string" },
+        "icon": { "type": "string" },
         "ownerId": { "type": "string" },
-        "tags": { 
-          "type": "array", 
-          "items": { "type": "string" } 
-        },
-        "icon": { "type": "string", "description": "Lucide icon name" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "startDate", "endDate", "status", "ownerId"]
+      "required": ["name", "ownerId", "createdAt"]
     },
     "Conference": {
-      "title": "Conference / Event",
-      "description": "An event, conference, or exhibition",
+      "title": "Conference",
+      "description": "Strategic conference or meeting",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "name": { "type": "string" },
         "startDate": { "type": "string", "format": "date" },
         "endDate": { "type": "string", "format": "date" },
         "location": { "type": "string" },
-        "description": { "type": "string" },
-        "agenda": { "type": "string" },
         "hieaId": { "type": "string" },
         "projectId": { "type": "string" },
         "goalId": { "type": "string" },
+        "description": { "type": "string" },
         "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "startDate", "endDate", "location", "ownerId"]
+      "required": ["name", "ownerId", "createdAt"]
     },
     "CalendarEvent": {
-      "title": "Strategic Event",
-      "description": "A scheduled event or meeting on the calendar",
+      "title": "Calendar Event",
+      "description": "Event on the strategic calendar",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "title": { "type": "string" },
         "date": { "type": "string", "format": "date" },
         "startTime": { "type": "string" },
         "endTime": { "type": "string" },
-        "reminder": { "type": "string", "enum": ["none", "15m", "1h", "1d", "1w"] },
         "description": { "type": "string" },
         "type": { "type": "string", "enum": ["meeting", "milestone", "deadline", "other"] },
         "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
         "ownerId": { "type": "string" },
+        "hieaId": { "type": "string" },
+        "reminder": { "type": "string", "enum": ["none", "15m", "1h", "1d", "1w"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "date", "startTime", "endTime", "type", "ownerId"]
+      "required": ["title", "date", "startTime", "endTime", "ownerId", "createdAt"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "UserProfile",
-      "description": "User profiles"
-    },
-    "/hieas/{hieaId}": {
-      "schema": "Hiea",
-      "description": "Hiea entities"
+      "description": "User profile documents"
     },
     "/goals/{goalId}": {
       "schema": "Goal",
-      "description": "Goals and targets"
+      "description": "Strategic goals"
+    },
+    "/hieas/{hieaId}": {
+      "schema": "Hiea",
+      "description": "Strategic authorities"
     },
     "/projects/{projectId}": {
       "schema": "Project",
-      "description": "Projects"
+      "description": "Strategic projects"
     },
-    "/conferences/{confId}": {
+    "/conferences/{conferenceId}": {
       "schema": "Conference",
-      "description": "Strategic conferences and events"
+      "description": "Strategic conferences"
     },
     "/calendar_events/{eventId}": {
       "schema": "CalendarEvent",
-      "description": "Strategic calendar events"
+      "description": "Calendar events"
     }
   }
 }

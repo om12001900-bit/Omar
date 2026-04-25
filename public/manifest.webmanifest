@@ -7,5 +7,19 @@
   "background_color": "#070708",
   "theme_color": "#4ade80",
   "dir": "rtl",
-  "lang": "ar"
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/identicon/svg?seed=ov9-vision",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/identicon/svg?seed=ov9-vision",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

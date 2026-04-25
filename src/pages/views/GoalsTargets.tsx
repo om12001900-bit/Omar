@@ -2,7 +2,15 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Trash2, Edit2, Calendar, Target, TrendingUp, Layers, Briefcase, CheckCircle2, ChevronLeft, Check, X, Target as TargetIcon, Activity, Search, ChevronDown } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
-import { localDB } from '../../services/localDB';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import { GoalType, GoalCategory } from '../../types';
@@ -63,11 +71,12 @@ export default function GoalsTargets() {
     if (!user) return;
 
     try {
-      localDB.add('goals', {
+      await addDoc(collection(db, 'goals'), {
         ...formData,
         milestones: [],
         ownerId: user.uid,
         progress: 0,
+        createdAt: serverTimestamp(),
       });
       setModalOpen(false);
       resetForm();
@@ -79,9 +88,22 @@ export default function GoalsTargets() {
   const handleUpdate = async () => {
     if (!selectedGoal) return;
     try {
-      localDB.update('goals', selectedGoal.id, editData);
+      await updateDoc(doc(db, 'goals', selectedGoal.id), {
+        ...editData,
+        updatedAt: serverTimestamp()
+      });
       setIsEditing(false);
       setSelectedGoal({ ...selectedGoal, ...editData });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateGoalProgress = async (val: number) => {
+    if (!selectedGoal || isEditing) return;
+    try {
+      await updateDoc(doc(db, 'goals', selectedGoal.id), { progress: val, updatedAt: serverTimestamp() });
+      setSelectedGoal({ ...selectedGoal, progress: val });
     } catch (err) {
       console.error(err);
     }
@@ -90,7 +112,7 @@ export default function GoalsTargets() {
   const handleDelete = async () => {
     if (!deleteConfirm.goalId) return;
     try {
-      localDB.delete('goals', deleteConfirm.goalId);
+      await deleteDoc(doc(db, 'goals', deleteConfirm.goalId));
       if (selectedGoal?.id === deleteConfirm.goalId) setSelectedGoal(null);
       setDeleteConfirm({ isOpen: false, goalId: null, name: '' });
     } catch (err) {
@@ -437,7 +459,7 @@ export default function GoalsTargets() {
                               const val = parseInt(e.target.value);
                               if (!isEditing) {
                                 // Direct update for convenience
-                                localDB.update('goals', selectedGoal.id, { progress: val });
+                                updateGoalProgress(val);
                                 setSelectedGoal({ ...selectedGoal, progress: val });
                               } else {
                                 setEditData({ ...editData, progress: val });

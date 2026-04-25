@@ -3,7 +3,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit2, Layers, Book, Gavel, ArrowRight, ChevronLeft, Target, Briefcase, Activity, TrendingUp, Check, Search, AlertCircle, Upload, Loader2, Link as LinkIcon } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
-import { localDB } from '../../services/localDB';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import ReactQuill from 'react-quill-new';
@@ -58,7 +66,7 @@ export default function Hieas() {
 
     setIsUploading(true);
     try {
-      // Simulate file upload with a local deterministic URL or just the file name
+      // Simulate file upload with a local deterministic URL
       const fakeUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${file.name}`;
       
       if (isEdit) {
@@ -78,7 +86,7 @@ export default function Hieas() {
     if (!user) return;
 
     try {
-      localDB.add('hieas', {
+      await addDoc(collection(db, 'hieas'), {
         name: formData.name,
         color: formData.color,
         goalIds: formData.goalIds,
@@ -87,7 +95,9 @@ export default function Hieas() {
         description: formData.description,
         laws: '',
         procedures: '',
+        progress: 0,
         ownerId: user.uid,
+        createdAt: serverTimestamp(),
       });
       setModalOpen(false);
       setFormData({ name: '', color: '#4ade80', goalIds: [], logoUrl: '', achievements: '', description: '' });
@@ -99,18 +109,11 @@ export default function Hieas() {
   const handleUpdateContent = async () => {
     if (!selectedHiea) return;
     try {
-      localDB.update('hieas', selectedHiea.id, {
-        laws: editContent.laws,
-        procedures: editContent.procedures,
-        color: editContent.color,
-        progress: editContent.progress,
-        goalIds: editContent.goalIds,
-        logoUrl: editContent.logoUrl,
-        achievements: editContent.achievements,
-        description: editContent.description,
+      await updateDoc(doc(db, 'hieas', selectedHiea.id), {
+        ...editContent,
+        updatedAt: serverTimestamp()
       });
       setIsEditing(false);
-      // Update local selection
       setSelectedHiea({ ...selectedHiea, ...editContent });
     } catch (err) {
       console.error(err);
@@ -120,7 +123,7 @@ export default function Hieas() {
   const handleDelete = async () => {
     if (!deleteConfirm.hieaId) return;
     try {
-      localDB.delete('hieas', deleteConfirm.hieaId);
+      await deleteDoc(doc(db, 'hieas', deleteConfirm.hieaId));
       if (selectedHiea?.id === deleteConfirm.hieaId) setSelectedHiea(null);
       setDeleteConfirm({ isOpen: false, hieaId: null, name: '' });
     } catch (err) {

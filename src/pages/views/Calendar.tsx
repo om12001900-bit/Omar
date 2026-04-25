@@ -31,9 +31,58 @@ import {
   isToday
 } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { localDB } from '../../services/localDB';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc,
+  serverTimestamp,
+  orderBy
+} from 'firebase/firestore';
+import { db, auth } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHieas, useConferences, useProjects } from '../../hooks/useData';
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 interface CalendarEvent {
   id: string;
@@ -96,20 +145,21 @@ export default function Calendar() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchEvents = () => {
-      try {
-        const fetchedEvents = localDB.getAll('calendar_events').filter((e: any) => e.ownerId === user.uid) as CalendarEvent[];
-        setEvents(fetchedEvents);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching calendar events:", error);
-        setLoading(false);
-      }
-    };
+    const q = query(
+      collection(db, 'calendar_events'), 
+      where('ownerId', '==', user.uid),
+      orderBy('date', 'asc')
+    );
 
-    fetchEvents();
-    window.addEventListener('local-storage-update', fetchEvents);
-    return () => window.removeEventListener('local-storage-update', fetchEvents);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as CalendarEvent[];
+      setEvents(data);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'calendar_events');
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
@@ -165,7 +215,10 @@ export default function Calendar() {
       allEvents.forEach(event => {
         if (!event.reminder || event.reminder === 'none' || event.isExternal) return;
         
-        const eventDate = new Date(`${event.date}T${event.startTime}`);
+        const eventDateStr = `${event.date}T${event.startTime}`;
+        const eventDate = new Date(eventDateStr);
+        if (isNaN(eventDate.getTime())) return;
+
         let reminderTime = new Date(eventDate);
 
         switch (event.reminder) {
@@ -175,12 +228,10 @@ export default function Calendar() {
           case '1w': reminderTime.setDate(reminderTime.getDate() - 7); break;
         }
 
-        // Trigger if time matches and happened within last minute (simple check)
         const diff = now.getTime() - reminderTime.getTime();
         if (diff > 0 && diff < 60000) {
           setActiveNotification(event);
           
-          // Browser Notification
           if ("Notification" in window && Notification.permission === "granted") {
             new Notification("تذكير القمة الاستراتيجية", {
               body: `الحدث: ${event.title}\nالوقت: ${event.startTime}`,
@@ -191,7 +242,6 @@ export default function Calendar() {
       });
     };
 
-    // Request notification permission if not yet decided
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -199,6 +249,7 @@ export default function Calendar() {
     const interval = setInterval(checkReminders, 60000);
     return () => clearInterval(interval);
   }, [allEvents, user]);
+
   const filteredEvents = selectedHieaIds.length === 0 
     ? allEvents 
     : allEvents.filter(e => e.hieaId && selectedHieaIds.includes(e.hieaId));
@@ -222,27 +273,31 @@ export default function Calendar() {
       const eventData = {
         ...formData,
         ownerId: user.uid,
+        updatedAt: serverTimestamp()
       };
 
       if (editingEvent) {
-        localDB.update('calendar_events', editingEvent.id, eventData);
+        await updateDoc(doc(db, 'calendar_events', editingEvent.id), eventData);
       } else {
-        localDB.add('calendar_events', eventData);
+        await addDoc(collection(db, 'calendar_events'), {
+          ...eventData,
+          createdAt: serverTimestamp()
+        });
       }
 
       setIsModalOpen(false);
       resetForm();
     } catch (error) {
-      console.error('Error saving event:', error);
+      handleFirestoreError(error, OperationType.WRITE, 'calendar_events');
     }
   };
 
   const handleDeleteEvent = async (eventId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذه الفعالية؟')) return;
     try {
-      localDB.delete('calendar_events', eventId);
+      await deleteDoc(doc(db, 'calendar_events', eventId));
     } catch (error) {
-      console.error('Error deleting event:', error);
+      handleFirestoreError(error, OperationType.DELETE, `calendar_events/${eventId}`);
     }
   };
 
