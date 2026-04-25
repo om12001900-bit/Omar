@@ -766,23 +766,21 @@ export default function GoalsTargets() {
 
              <div className="grid grid-cols-2 gap-8">
                <div className="space-y-4">
-                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">تاريخ الانطلاق</label>
+                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">تاريخ الانطلاق (اختياري)</label>
                   <input 
                     type="date" 
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-8 outline-none focus:border-brand-primary text-slate-300 font-bold"
-                    required
                   />
                </div>
-               <div className="space-y-4">
-                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">موعد الإغلاق</label>
+               <div className="space-y-4 text-right">
+                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">موعد الإغلاق (اختياري)</label>
                   <input 
                     type="date" 
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-8 outline-none focus:border-brand-primary text-slate-300 font-bold"
-                    required
                   />
                </div>
              </div>

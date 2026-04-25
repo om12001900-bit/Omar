@@ -615,9 +615,32 @@ export default function Projects() {
                                 onChange={(e) => setEditData({ ...editData, goalId: e.target.value })}
                                 className="bg-white/5 border border-white/10 rounded-none px-6 py-2 text-sm text-slate-300 outline-none focus:border-brand-secondary w-full md:w-[400px] appearance-none"
                               >
-                                <option value="" className="bg-slate-900">ربط بهدف استراتيجي...</option>
+                                <option value="" className="bg-slate-900">ربط بهدف استراتيجي (اختياري)...</option>
                                 {goals.map(g => <option key={g.id} value={g.id} className="bg-slate-900">{g.name}</option>)}
                               </select>
+
+                              {editData.status !== ProjectStatus.COMPLETED && (
+                                <div className="grid grid-cols-2 gap-4 w-full md:w-[400px]">
+                                  <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase text-slate-600 tracking-widest px-2">تاريخ الانطلاق</label>
+                                    <input 
+                                      type="date" 
+                                      value={editData.startDate}
+                                      onChange={(e) => setEditData({ ...editData, startDate: e.target.value })}
+                                      className="w-full bg-white/5 border border-white/10 rounded-none py-2 px-4 outline-none focus:border-brand-secondary text-sm text-slate-300 font-bold"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="block text-[10px] font-black uppercase text-slate-600 tracking-widest px-2">تاريخ الانتهاء</label>
+                                    <input 
+                                      type="date" 
+                                      value={editData.endDate}
+                                      onChange={(e) => setEditData({ ...editData, endDate: e.target.value })}
+                                      className="w-full bg-white/5 border border-white/10 rounded-none py-2 px-4 outline-none focus:border-brand-secondary text-sm text-slate-300 font-bold"
+                                    />
+                                  </div>
+                                </div>
+                              )}
 
                               <div className="space-y-4">
                                 <label className="block text-[10px] font-black uppercase text-slate-600 tracking-widest px-2">أيقونة المشروع</label>
@@ -1254,30 +1277,34 @@ export default function Projects() {
              </div>
 
              <div className="grid grid-cols-2 gap-8">
-               <div className={`space-y-4 ${formData.status === ProjectStatus.COMPLETED ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">
-                    موعد الإغلاق المستهدف {formData.status === ProjectStatus.COMPLETED && '(اختياري)'}
-                  </label>
-                  <input 
-                    type="date" 
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-8 outline-none focus:border-brand-secondary text-slate-300 font-bold"
-                    required={formData.status !== ProjectStatus.COMPLETED}
-                  />
-               </div>
-               <div className={`space-y-4 text-right ${formData.status === ProjectStatus.COMPLETED ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">
-                    تاريخ الانطلاق {formData.status === ProjectStatus.COMPLETED && '(اختياري)'}
-                  </label>
-                  <input 
-                    type="date" 
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-8 outline-none focus:border-brand-secondary text-slate-300 font-bold"
-                    required={formData.status !== ProjectStatus.COMPLETED}
-                  />
-               </div>
+               {formData.status !== ProjectStatus.COMPLETED && (
+                 <>
+                   <div className="space-y-4">
+                      <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">
+                        موعد الإغلاق المستهدف
+                      </label>
+                      <input 
+                        type="date" 
+                        value={formData.endDate}
+                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-8 outline-none focus:border-brand-secondary text-slate-300 font-bold text-right"
+                        required
+                      />
+                   </div>
+                   <div className="space-y-4 text-right">
+                      <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">
+                        تاريخ الانطلاق
+                      </label>
+                      <input 
+                        type="date" 
+                        value={formData.startDate}
+                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-none py-5 px-8 outline-none focus:border-brand-secondary text-slate-300 font-bold text-right"
+                        required
+                      />
+                   </div>
+                 </>
+               )}
              </div>
 
              <div className="space-y-4">
