@@ -20,6 +20,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useProjects, useGoals, useHieas } from '../../hooks/useData';
+import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { 
   collection, 
   addDoc, 
@@ -147,6 +148,7 @@ export default function Projects() {
       setDeleteConfirm({ isOpen: false, projectId: null });
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.DELETE, `projects/${deleteConfirm.projectId}`);
     }
   };
 

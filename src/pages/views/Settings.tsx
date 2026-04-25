@@ -9,7 +9,18 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
 import { useHieas, useProjects, useGoals, useConferences } from '../../hooks/useData';
 import { db } from '../../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
+import { 
+  collection, 
+  updateDoc, 
+  doc, 
+  addDoc, 
+  serverTimestamp,
+  writeBatch,
+  getDocs,
+  query,
+  where
+} from 'firebase/firestore';
 
 export default function Settings() {
   const { profile, updateProfile, uploadAvatar, user } = useAuth();
@@ -61,6 +72,7 @@ export default function Settings() {
       setTimeout(() => setActiveTab(null), 1500);
     } catch (error) {
       console.error("Error updating profile:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${user?.uid}`);
       setErrorMessage('فشل تحديث البيانات. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsSaving(false);
@@ -87,6 +99,7 @@ export default function Settings() {
       setSuccessMessage('تم رفع وتحديث صورة البروفايل بنجاح.');
     } catch (error) {
       console.error("Upload error:", error);
+      handleFirestoreError(error, OperationType.WRITE, `avatars/${user?.uid}`);
       setErrorMessage('فشل رفع الصورة. تأكد من اتصالك واتصال قاعدة البيانات.');
     } finally {
       setIsUploading(false);
@@ -126,10 +139,12 @@ export default function Settings() {
       try {
         const data = JSON.parse(event.target?.result as string);
         setIsSaving(true);
-        setSuccessMessage('جاري معالجة استيراد البيانات وبناء الروابط الاستراتيجية...');
+        setSuccessMessage('جاري معالج استيراد البيانات وبناء الروابط الاستراتيجية...');
 
         const hieaIdMap: Record<string, string> = {};
         const projectIdMap: Record<string, string> = {};
+
+        const batch = writeBatch(db);
 
         // 1. Import HIEAs
         if (data.hieas && Array.isArray(data.hieas)) {
@@ -140,7 +155,8 @@ export default function Settings() {
             delete cleanData.createdAt;
             delete cleanData.updatedAt;
             
-            const docRef = await addDoc(collection(db, 'hieas'), {
+            const docRef = doc(collection(db, 'hieas'));
+            batch.set(docRef, {
               ...cleanData,
               ownerId: user.uid,
               createdAt: serverTimestamp()
@@ -158,14 +174,13 @@ export default function Settings() {
             delete cleanData.createdAt;
             delete cleanData.updatedAt;
 
-            const updatedData: Record<string, unknown> = { ...cleanData };
-            
-            // Map parent HIEA if exists
+            const updatedData: Record<string, any> = { ...cleanData };
             if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
               updatedData.hieaId = hieaIdMap[cleanData.hieaId];
             }
 
-            const docRef = await addDoc(collection(db, 'projects'), {
+            const docRef = doc(collection(db, 'projects'));
+            batch.set(docRef, {
               ...updatedData,
               ownerId: user.uid,
               createdAt: serverTimestamp()
@@ -173,6 +188,7 @@ export default function Settings() {
             if (oldId) projectIdMap[oldId] = docRef.id;
           }
         }
+
         // 3. Import Goals
         if (data.goals && Array.isArray(data.goals)) {
           for (const item of data.goals) {
@@ -181,9 +197,7 @@ export default function Settings() {
             delete cleanData.createdAt;
             delete cleanData.updatedAt;
             
-            const updatedData: Record<string, unknown> = { ...cleanData };
-
-            // Map parents
+            const updatedData: Record<string, any> = { ...cleanData };
             if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
               updatedData.hieaId = hieaIdMap[cleanData.hieaId];
             }
@@ -191,7 +205,8 @@ export default function Settings() {
               updatedData.projectId = projectIdMap[cleanData.projectId];
             }
 
-            await addDoc(collection(db, 'goals'), {
+            const docRef = doc(collection(db, 'goals'));
+            batch.set(docRef, {
               ...updatedData,
               ownerId: user.uid,
               createdAt: serverTimestamp()
@@ -207,18 +222,33 @@ export default function Settings() {
             delete cleanData.createdAt;
             delete cleanData.updatedAt;
 
-            await addDoc(collection(db, 'conferences'), {
-              ...cleanData,
+            const updatedData: Record<string, any> = { ...cleanData };
+            if (cleanData.hieaId && hieaIdMap[cleanData.hieaId]) {
+              updatedData.hieaId = hieaIdMap[cleanData.hieaId];
+            }
+            if (cleanData.projectId && projectIdMap[cleanData.projectId]) {
+              updatedData.projectId = projectIdMap[cleanData.projectId];
+            }
+
+            const docRef = doc(collection(db, 'conferences'));
+            batch.set(docRef, {
+              ...updatedData,
               ownerId: user.uid,
               createdAt: serverTimestamp()
             });
           }
         }
 
+        await batch.commit();
         setSuccessMessage('تم استيراد كافة البيانات وبناء الروابط بنجاح.');
       } catch (error) {
         console.error("Import error:", error);
         setErrorMessage('فشل استيراد البيانات. تأكد من صحة تنسيق الملف.');
+        try {
+          handleFirestoreError(error, OperationType.WRITE, 'bulk_import');
+        } catch (e) {
+          // Handled
+        }
       } finally {
         setIsSaving(false);
       }
@@ -681,6 +711,25 @@ export default function Settings() {
                     <Database size={20} className="text-brand-primary" />
                     إدارة الموارد والبيانات
                   </h3>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+                    <div className="p-4 bg-white/5 border border-white/5 text-center">
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">الهيئات</p>
+                      <p className="text-xl font-display font-black text-white">{hieas.length}</p>
+                    </div>
+                    <div className="p-4 bg-white/5 border border-white/5 text-center">
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">المبادرات</p>
+                      <p className="text-xl font-display font-black text-white">{projects.length}</p>
+                    </div>
+                    <div className="p-4 bg-white/5 border border-white/5 text-center">
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">الأهداف</p>
+                      <p className="text-xl font-display font-black text-white">{goals.length}</p>
+                    </div>
+                    <div className="p-4 bg-white/5 border border-white/5 text-center">
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">المؤتمرات</p>
+                      <p className="text-xl font-display font-black text-white">{conferences.length}</p>
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-8 bg-white/5 border border-white/10 space-y-4 text-right group hover:border-brand-primary transition-all">

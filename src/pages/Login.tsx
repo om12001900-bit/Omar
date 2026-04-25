@@ -39,7 +39,7 @@ export default function Login() {
       } else if (authError.code === 'auth/popup-closed-by-user') {
         setError('تم إغلاق نافذة تسجيل الدخول قبل اكتمال العملية.');
       } else if (authError.code === 'auth/user-not-found' || authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-credential') {
-        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+        setError('بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد الإلكتروني وكلمة المرور.');
       } else if (authError.code === 'auth/email-already-in-use') {
         setError('هذا البريد الإلكتروني مستخدم بالفعل.');
       } else {
@@ -64,7 +64,7 @@ export default function Login() {
       } else if (authError.code === 'auth/popup-closed-by-user') {
         setError('تم إغلاق نافذة تسجيل الدخول قبل اكتمال العملية.');
       } else if (authError.code === 'auth/invalid-credential') {
-        setError('بيانات الاعتماد غير صالحة. يرجى المحاولة مرة أخرى.');
+        setError('بيانات الاعتماد غير صالحة أو منتهية الصلاحية. يرجى المحاولة مرة أخرى.');
       } else {
         setError(authError.message || 'خطأ في تسجيل الدخول عبر جوجل.');
       }

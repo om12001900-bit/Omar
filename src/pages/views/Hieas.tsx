@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit2, Layers, Book, Gavel, ArrowRight, ChevronLeft, Target, Briefcase, Activity, TrendingUp, Check, Search, AlertCircle, Upload, Loader2, Link as LinkIcon } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
+import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { 
   collection, 
   addDoc, 
@@ -67,17 +68,20 @@ export default function Hieas() {
 
     setIsUploading(true);
     try {
-      // Simulate file upload with a local deterministic URL
-      const fakeUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${file.name}`;
-      
-      if (isEdit) {
-        setEditContent({ ...editContent, logoUrl: fakeUrl });
-      } else {
-        setFormData({ ...formData, logoUrl: fakeUrl });
-      }
+      // Use FileReader for a real local preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        if (isEdit) {
+          setEditContent({ ...editContent, logoUrl: base64 });
+        } else {
+          setFormData({ ...formData, logoUrl: base64 });
+        }
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
       console.error('Upload failed:', err);
-    } finally {
       setIsUploading(false);
     }
   };
@@ -104,6 +108,7 @@ export default function Hieas() {
       setFormData({ name: '', color: '#4ade80', goalIds: [], logoUrl: '', achievements: '', description: '' });
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.CREATE, 'hieas');
     }
   };
 
@@ -118,6 +123,7 @@ export default function Hieas() {
       setSelectedHiea({ ...selectedHiea, ...editContent });
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.UPDATE, `hieas/${selectedHiea.id}`);
     }
   };
 
@@ -129,6 +135,7 @@ export default function Hieas() {
       setDeleteConfirm({ isOpen: false, hieaId: null, name: '' });
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.DELETE, `hieas/${deleteConfirm.hieaId}`);
     }
   };
 

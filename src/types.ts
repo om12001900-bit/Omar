@@ -28,6 +28,9 @@ export interface UserSettings {
   borderRadius: 'none' | 'small' | 'medium' | 'full';
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FirestoreTimestamp = any;
+
 export interface UserProfile {
   uid: string;
   displayName: string;
@@ -36,7 +39,7 @@ export interface UserProfile {
   bio?: string;
   photoURL?: string;
   settings?: UserSettings;
-  createdAt: any;
+  createdAt: FirestoreTimestamp;
 }
 
 export interface Goal {
@@ -51,7 +54,7 @@ export interface Goal {
   progress: number;
   milestones: Milestone[];
   ownerId: string;
-  createdAt: any;
+  createdAt: FirestoreTimestamp;
 }
 
 export interface Hiea {
@@ -65,7 +68,7 @@ export interface Hiea {
   progress?: number;
   goalIds?: string[];
   ownerId: string;
-  createdAt: any;
+  createdAt: FirestoreTimestamp;
 }
 
 export interface Project {
@@ -82,7 +85,7 @@ export interface Project {
   tags?: string[];
   icon?: string;
   ownerId: string;
-  createdAt: any;
+  createdAt: FirestoreTimestamp;
 }
 
 export interface Conference {
@@ -97,5 +100,5 @@ export interface Conference {
   description: string;
   agenda?: string;
   ownerId: string;
-  createdAt: any;
+  createdAt: FirestoreTimestamp;
 }

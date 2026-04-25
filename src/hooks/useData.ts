@@ -24,8 +24,11 @@ export function useGoals() {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Goal[];
+    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data({ serverTimestamps: 'estimate' }) 
+      })) as Goal[];
       setGoals(data);
       setLoading(false);
     }, (error) => {
@@ -53,8 +56,11 @@ export function useHieas() {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Hiea[];
+    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data({ serverTimestamps: 'estimate' }) 
+      })) as Hiea[];
       setHieas(data);
       setLoading(false);
     }, (error) => {
@@ -82,8 +88,11 @@ export function useProjects() {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
+    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data({ serverTimestamps: 'estimate' }) 
+      })) as Project[];
       setProjects(data);
       setLoading(false);
     }, (error) => {
@@ -111,8 +120,11 @@ export function useConferences() {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Conference[];
+    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data({ serverTimestamps: 'estimate' }) 
+      })) as Conference[];
       setConferences(data);
       setLoading(false);
     }, (error) => {
