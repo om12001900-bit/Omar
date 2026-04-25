@@ -33,7 +33,7 @@ export default function Login() {
       }
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'خطأ في العملية. يرجى استخدام تسجيل الدخول عبر جوجل.');
+      setError(err.message || 'حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى.');
       console.error(err);
     } finally {
       setLoading(false);

@@ -4,7 +4,10 @@ import {
   signOut as firebaseSignOut, 
   signInWithPopup, 
   GoogleAuthProvider,
-  User as FirebaseUser
+  User as FirebaseUser,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile as firebaseUpdateProfile
 } from 'firebase/auth';
 import { 
   doc, 
@@ -134,14 +137,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (identifier: string, isPhone: boolean, password: string) => {
-    // Fallback to email/password for now since the UI is built for it.
-    // In a real app we would use signInWithEmailAndPassword.
-    // For this context, we will inform the user about Google login preference.
-    throw new Error('يرجى استخدام تسجيل الدخول عبر جوجل للتوافق مع البيانات');
+    if (isPhone) {
+      throw new Error('تسجيل الدخول عبر الهاتف غير مدعوم حالياً، يرجى استخدام البريد الإلكتروني.');
+    }
+    await signInWithEmailAndPassword(auth, identifier, password);
   };
   
   const register = async (identifier: string, isPhone: boolean, password: string, displayName: string) => {
-    throw new Error('يرجى استخدام تسجيل الدخول عبر جوجل للتوافق مع البيانات');
+    if (isPhone) {
+      throw new Error('التسجيل عبر الهاتف غير مدعوم حالياً، يرجى استخدام البريد الإلكتروني.');
+    }
+    const userCredential = await createUserWithEmailAndPassword(auth, identifier, password);
+    await firebaseUpdateProfile(userCredential.user, { displayName });
   };
 
   const signInWithGoogle = async () => {
