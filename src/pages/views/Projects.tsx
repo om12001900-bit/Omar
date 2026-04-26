@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutGrid,
@@ -81,6 +81,25 @@ export default function Projects() {
     tags: [] as string[],
     icon: 'Briefcase',
   });
+
+  useEffect(() => {
+    if (selectedProject) {
+      setEditData({
+        name: selectedProject.name,
+        description: selectedProject.description || '',
+        startDate: selectedProject.startDate || '',
+        endDate: selectedProject.endDate || '',
+        status: selectedProject.status || ProjectStatus.IN_PROGRESS,
+        progress: selectedProject.progress || 0,
+        milestones: selectedProject.milestones || [],
+        hieaIds: selectedProject.hieaIds || (selectedProject.hieaId ? [selectedProject.hieaId] : []),
+        goalId: selectedProject.goalId || '',
+        tags: selectedProject.tags || [],
+        icon: selectedProject.icon || 'Briefcase',
+      });
+      setIsEditing(false);
+    }
+  }, [selectedProject?.id]);
 
   const resetForm = () => {
     setFormData({
