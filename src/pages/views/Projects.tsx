@@ -128,7 +128,7 @@ export default function Projects() {
       };
       await updateDoc(doc(db, 'projects', selectedProject.id), updatedData);
       setIsEditing(false);
-      setSelectedProject({ ...selectedProject, ...updatedData as any });
+      setSelectedProject({ ...selectedProject, ...updatedData } as Project);
     } catch (err) {
       console.error(err);
       handleFirestoreError(err, OperationType.UPDATE, `projects/${selectedProject.id}`);
@@ -211,6 +211,12 @@ export default function Projects() {
   const selectedProjectHieaIds = selectedProject?.hieaIds || (selectedProject?.hieaId ? [selectedProject.hieaId] : []);
   const selectedProjectHieas = hieas.filter(h => selectedProjectHieaIds.includes(h.id));
   const projectThemeColor = selectedProjectHieas[0]?.color || '#2dd4bf';
+
+  const relatedProjects = projects.filter(p => 
+    selectedProject && 
+    p.id !== selectedProject.id && 
+    (p.hieaIds || (p.hieaId ? [p.hieaId] : [])).some(id => selectedProjectHieaIds.includes(id))
+  ).slice(0, 4);
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden text-right">
@@ -1089,6 +1095,54 @@ export default function Projects() {
                               </div>
                            </div>
                         </div>
+                        {/* Related Projects Section */}
+                        {relatedProjects.length > 0 && (
+                           <motion.div 
+                             initial={{ opacity: 0, y: 20 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             className="space-y-6 pt-10"
+                           >
+                             <div className="flex items-center gap-4 flex-row-reverse px-2">
+                               <div className="h-px flex-1 bg-white/5" />
+                               <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em]">مسارات تنفيذية مرتبطة</h4>
+                               <div className="h-px flex-1 bg-white/5" />
+                             </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                               {relatedProjects.map(p => {
+                                 const pHieaIds = p.hieaIds || (p.hieaId ? [p.hieaId] : []);
+                                 const pHieas = hieas.filter(h => pHieaIds.includes(h.id));
+                                 const pColor = pHieas[0]?.color || '#2dd4bf';
+                                 
+                                 return (
+                                   <motion.button
+                                     key={p.id}
+                                     whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.03)' }}
+                                     onClick={() => {
+                                       setSelectedProject(p);
+                                       window.scrollTo({ top: 0, behavior: 'smooth' });
+                                     }}
+                                     className="glass p-6 border border-white/5 bg-white/[0.01] flex items-center justify-between gap-4 text-right group/rel"
+                                   >
+                                     <ChevronLeft size={16} className="text-slate-700 group-hover/rel:text-brand-secondary transition-colors" />
+                                     <div className="flex-1 min-w-0">
+                                       <h5 className="text-sm font-bold text-slate-300 truncate mb-1 group-hover/rel:text-white transition-colors">{p.name}</h5>
+                                       <div className="flex items-center gap-2 justify-end">
+                                         <span className="text-[9px] font-bold text-slate-500 uppercase">{p.status === ProjectStatus.COMPLETED ? 'مكتمل' : 'قيد التنفيذ'}</span>
+                                         <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: pColor }} />
+                                       </div>
+                                     </div>
+                                     <div 
+                                       className="w-10 h-10 border flex items-center justify-center shrink-0 transition-all bg-white/5"
+                                       style={{ borderColor: `${pColor}40`, color: pColor }}
+                                     >
+                                       <ProjectIcon name={p.icon || 'Briefcase'} size={18} />
+                                     </div>
+                                   </motion.button>
+                                 );
+                               })}
+                             </div>
+                           </motion.div>
+                        )}
                     </div>
 
                     {/* Right Column: Stages/Milestones Workspace */}

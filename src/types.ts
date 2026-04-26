@@ -87,6 +87,7 @@ export interface Project {
   icon?: string;
   ownerId: string;
   createdAt: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface Conference {
