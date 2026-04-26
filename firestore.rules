@@ -56,7 +56,9 @@ service cloud.firestore {
       return data.ownerId == request.auth.uid &&
              data.name is string && data.name.size() <= 200 &&
              data.status in ['upcoming', 'in-progress', 'completed'] &&
-             (!data.keys().contains('hieaId') || isValidId(data.hieaId)) &&
+             (!data.keys().contains('hieaId') || data.hieaId == '' || isValidId(data.hieaId)) &&
+             (!data.keys().contains('hieaIds') || data.hieaIds is list) &&
+             (!data.keys().contains('goalId') || data.goalId == '' || isValidId(data.goalId)) &&
              data.createdAt != null;
     }
 
@@ -110,7 +112,7 @@ service cloud.firestore {
       allow update: if isOwner(existing().ownerId) && isValidProject(incoming()) &&
                     incoming().ownerId == existing().ownerId &&
                     (existing().status != 'completed' || incoming().status == 'completed') &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'startDate', 'endDate', 'status', 'progress', 'milestones', 'hieaId', 'tags', 'icon']);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'startDate', 'endDate', 'status', 'progress', 'milestones', 'hieaId', 'hieaIds', 'goalId', 'tags', 'icon']);
       allow delete: if isOwner(existing().ownerId);
     }
 

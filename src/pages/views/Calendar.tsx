@@ -91,6 +91,7 @@ interface CalendarEvent {
   priority: 'low' | 'medium' | 'high' | 'critical';
   ownerId: string;
   hieaId?: string;
+  hieaIds?: string[];
   isExternal?: boolean;
   source?: string;
   reminder?: 'none' | '15m' | '1h' | '1d' | '1w';
@@ -183,8 +184,8 @@ export default function Calendar() {
     const fetchedMilestones: CalendarEvent[] = [];
     projects.forEach(proj => {
       if (proj.milestones) {
+        const projectHieaIds = proj.hieaIds || (proj.hieaId ? [proj.hieaId] : []);
         proj.milestones.forEach((m: Milestone) => {
-          // If milestone has date (some might use 'date' or 'dueDate')
           const mDate = m.date;
           if (mDate) {
             fetchedMilestones.push({
@@ -199,7 +200,8 @@ export default function Calendar() {
               ownerId: proj.ownerId,
               isExternal: true,
               source: 'مشروع',
-              hieaId: proj.hieaId
+              hieaId: proj.hieaId,
+              hieaIds: projectHieaIds
             });
           }
         });
@@ -256,7 +258,11 @@ export default function Calendar() {
 
   const filteredEvents = selectedHieaIds.length === 0 
     ? allEvents 
-    : allEvents.filter(e => e.hieaId && selectedHieaIds.includes(e.hieaId));
+    : allEvents.filter(e => {
+        if (e.hieaIds && e.hieaIds.some(id => selectedHieaIds.includes(id))) return true;
+        if (e.hieaId && selectedHieaIds.includes(e.hieaId)) return true;
+        return false;
+      });
 
   const toggleHieaFilter = (id: string) => {
     setSelectedHieaIds(prev => 
@@ -480,8 +486,9 @@ export default function Calendar() {
 
             <div className="space-y-1">
               {dayEvents.slice(0, 3).map((event) => {
-                const hiea = hieas.find(h => h.id === event.hieaId);
-                const eventColor = hiea?.color || EVENT_TYPES.find(t => t.id === event.type)?.color.replace('bg-', '#').replace('blue-500', '#3b82f6').replace('emerald-500', '#10b981').replace('amber-500', '#f59e0b').replace('slate-500', '#64748b') || '#64748b';
+                const eventHieaIds = event.hieaIds || (event.hieaId ? [event.hieaId] : []);
+                const firstHiea = hieas.find(h => eventHieaIds.includes(h.id));
+                const eventColor = firstHiea?.color || EVENT_TYPES.find(t => t.id === event.type)?.color.replace('bg-', '#').replace('blue-500', '#3b82f6').replace('emerald-500', '#10b981').replace('amber-500', '#f59e0b').replace('slate-500', '#64748b') || '#64748b';
 
                 return (
                   <div 
@@ -576,12 +583,20 @@ export default function Calendar() {
 
                 <h4 className="text-base font-bold text-slate-100 mb-2 truncate">{event.title}</h4>
                 
-                {event.hieaId && (
-                  <div className="flex items-center justify-end gap-2 mb-3">
-                    <span className="text-[9px] font-bold text-slate-500">
-                      {hieas.find(h => h.id === event.hieaId)?.name}
-                    </span>
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: hieas.find(h => h.id === event.hieaId)?.color || '#4ade80' }} />
+                {(event.hieaId || (event.hieaIds && event.hieaIds.length > 0)) && (
+                  <div className="flex flex-wrap justify-end gap-2 mb-3">
+                    {(event.hieaIds || (event.hieaId ? [event.hieaId] : [])).map(hid => {
+                      const h = hieas.find(x => x.id === hid);
+                      if (!h) return null;
+                      return (
+                        <div key={hid} className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 border border-white/5">
+                          <span className="text-[8px] font-bold text-slate-500">
+                            {h.name}
+                          </span>
+                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: h.color || '#4ade80' }} />
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 

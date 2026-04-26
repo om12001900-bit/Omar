@@ -105,6 +105,7 @@ export default function Projects() {
     try {
       await addDoc(collection(db, 'projects'), {
         ...formData,
+        hieaId: formData.hieaIds[0] || '',
         milestones: [],
         ownerId: user.uid,
         createdAt: serverTimestamp(),
@@ -120,12 +121,14 @@ export default function Projects() {
   const handleUpdate = async () => {
     if (!selectedProject) return;
     try {
-      await updateDoc(doc(db, 'projects', selectedProject.id), {
+      const updatedData = {
         ...editData,
+        hieaId: editData.hieaIds && editData.hieaIds.length > 0 ? editData.hieaIds[0] : '',
         updatedAt: serverTimestamp()
-      });
+      };
+      await updateDoc(doc(db, 'projects', selectedProject.id), updatedData);
       setIsEditing(false);
-      setSelectedProject({ ...selectedProject, ...editData });
+      setSelectedProject({ ...selectedProject, ...updatedData as any });
     } catch (err) {
       console.error(err);
       handleFirestoreError(err, OperationType.UPDATE, `projects/${selectedProject.id}`);

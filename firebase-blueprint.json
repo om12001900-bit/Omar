@@ -73,6 +73,10 @@
         "status": { "type": "string", "enum": ["upcoming", "in-progress", "completed"] },
         "progress": { "type": "number" },
         "hieaId": { "type": "string" },
+        "hieaIds": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "icon": { "type": "string" },
         "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
