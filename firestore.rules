@@ -31,9 +31,10 @@ service cloud.firestore {
     function isValidUser(data) {
       return data.uid == request.auth.uid &&
              data.displayName is string && data.displayName.size() <= 100 &&
-             (data.get('email', '') is string && data.get('email', '').size() <= 255) &&
-             (data.get('phoneNumber', '') is string && data.get('phoneNumber', '').size() <= 30) &&
-             (data.get('bio', '') is string && data.get('bio', '').size() <= 1000) &&
+             (!data.keys().contains('email') || (data.email is string && data.email.size() <= 255)) &&
+             (!data.keys().contains('phoneNumber') || (data.phoneNumber is string && data.phoneNumber.size() <= 30)) &&
+             (!data.keys().contains('bio') || (data.bio is string && data.bio.size() <= 1000)) &&
+             (!data.keys().contains('photoURL') || (data.photoURL is string && data.photoURL.size() <= 1000)) &&
              data.createdAt != null;
     }
 
@@ -42,43 +43,56 @@ service cloud.firestore {
              data.name is string && data.name.size() <= 200 &&
              data.type in ['objective', 'target'] &&
              data.category in ['OV9', 'S15'] &&
-             (!data.keys().contains('hieaId') || isValidId(data.hieaId)) &&
-             data.createdAt != null &&
-             (!data.keys().contains('updatedAt') || data.updatedAt != null);
+             (!data.keys().contains('progress') || data.progress is number) &&
+             (!data.keys().contains('hieaId') || data.hieaId == '' || isValidId(data.hieaId)) &&
+             (!data.keys().contains('startDate') || data.startDate is string) &&
+             (!data.keys().contains('endDate') || data.endDate is string) &&
+             data.createdAt != null;
     }
 
     function isValidHiea(data) {
       return data.ownerId == request.auth.uid &&
              data.name is string && data.name.size() <= 200 &&
-             data.createdAt != null &&
-             (!data.keys().contains('updatedAt') || data.updatedAt != null);
+             (!data.keys().contains('color') || data.color is string) &&
+             (!data.keys().contains('logoUrl') || data.logoUrl is string) &&
+             data.createdAt != null;
     }
 
     function isValidProject(data) {
       return data.ownerId == request.auth.uid &&
              data.name is string && data.name.size() <= 200 &&
              data.status in ['upcoming', 'in-progress', 'completed'] &&
+             data.progress is number &&
+             data.progress >= 0 && data.progress <= 100 &&
+             (!data.keys().contains('description') || data.description is string) &&
+             (!data.keys().contains('startDate') || data.startDate is string) &&
+             (!data.keys().contains('endDate') || data.endDate is string) &&
              (!data.keys().contains('hieaId') || data.hieaId == '' || isValidId(data.hieaId)) &&
              (!data.keys().contains('hieaIds') || data.hieaIds is list) &&
              (!data.keys().contains('goalId') || data.goalId == '' || isValidId(data.goalId)) &&
-             data.createdAt != null &&
-             (!data.keys().contains('updatedAt') || data.updatedAt != null);
+             (!data.keys().contains('tags') || data.tags is list) &&
+             (!data.keys().contains('icon') || data.icon is string) &&
+             (!data.keys().contains('milestones') || data.milestones is list) &&
+             data.createdAt != null;
     }
 
     function isValidConference(data) {
       return data.ownerId == request.auth.uid &&
              data.name is string && data.name.size() <= 200 &&
-             data.createdAt != null &&
-             (!data.keys().contains('updatedAt') || data.updatedAt != null);
+             (!data.keys().contains('description') || data.description is string) &&
+             data.createdAt != null;
     }
 
     function isValidEvent(data) {
       return data.ownerId == request.auth.uid &&
              data.title is string && data.title.size() <= 200 &&
-             data.type in ['meeting', 'milestone', 'deadline', 'other'] &&
-             data.priority in ['low', 'medium', 'high', 'critical'] &&
-             data.createdAt != null &&
-             (!data.keys().contains('updatedAt') || data.updatedAt != null);
+             (!data.keys().contains('date') || data.date is string) &&
+             (!data.keys().contains('startTime') || data.startTime is string) &&
+             (!data.keys().contains('endTime') || data.endTime is string) &&
+             (!data.keys().contains('description') || data.description is string) &&
+             (!data.keys().contains('type') || data.type in ['meeting', 'milestone', 'deadline', 'other']) &&
+             (!data.keys().contains('priority') || data.priority in ['low', 'medium', 'high', 'critical']) &&
+             data.createdAt != null;
     }
 
     // --- Resource Routes ---
@@ -113,10 +127,10 @@ service cloud.firestore {
     match /projects/{projectId} {
       allow get: if isOwner(existing().ownerId);
       allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if isOwner(incoming().ownerId) && isValidId(projectId) && isValidProject(incoming());
-      allow update: if isOwner(existing().ownerId) && isValidProject(incoming()) &&
+      allow create: if isOwner(incoming().ownerId) && isValidProject(incoming());
+      allow update: if isOwner(existing().ownerId) &&
+                    isValidProject(incoming()) &&
                     incoming().ownerId == existing().ownerId &&
-                    (existing().status != 'completed' || incoming().status == 'completed') &&
                     incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'startDate', 'endDate', 'status', 'progress', 'milestones', 'hieaId', 'hieaIds', 'goalId', 'tags', 'icon', 'updatedAt']);
       allow delete: if isOwner(existing().ownerId);
     }
