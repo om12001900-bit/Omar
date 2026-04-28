@@ -12,7 +12,8 @@ import {
   X,
   Presentation,
   Calendar as CalendarIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePWA } from '../hooks/usePWA';
@@ -24,6 +25,7 @@ import Projects from './views/Projects';
 import Conferences from './views/Conferences';
 import Calendar from './views/Calendar';
 import Settings from './views/Settings';
+import Analytics from './views/Analytics';
 
 import { Logo } from '../components/Logo';
 import { InstallPWA } from '../components/InstallPWA';
@@ -44,6 +46,7 @@ export default function Dashboard() {
 
   const navItems = [
     { path: '/dashboard', label: 'المتابعة', icon: LayoutDashboard },
+    { path: '/dashboard/analytics', label: 'التمثيل البياني', icon: BarChart3 },
     { path: '/dashboard/goals', label: 'الأهداف والمستهدفات', icon: Target },
     { path: '/dashboard/hieas', label: 'الهيئات الاستراتيجية', icon: Layers },
     { path: '/dashboard/projects', label: 'المشاريع التنفيذية', icon: Briefcase },
@@ -223,7 +226,7 @@ export default function Dashboard() {
       </AnimatePresence>
 
       {/* Navigation Ribbon (Desktop only, or horizontal on mobile) */}
-      <nav className="hidden md:flex h-14 bg-white/[0.01] border-b border-red-500/10 items-center px-4 overflow-x-auto no-scrollbar shrink-0">
+      <nav className="hidden md:flex h-14 bg-[#0a0a0b]/50 border-b border-white/5 items-center px-6 overflow-x-auto no-scrollbar shrink-0 backdrop-blur-md">
         <motion.div 
           initial="hidden"
           animate="visible"
@@ -236,7 +239,7 @@ export default function Dashboard() {
               }
             }
           }}
-          className="flex items-center gap-4 mx-auto"
+          className="flex items-center gap-2"
         >
           {navItems.map((item) => {
             const isActive = currentPath === item.path || (item.path !== '/dashboard' && currentPath.startsWith(item.path));
@@ -244,25 +247,25 @@ export default function Dashboard() {
               <motion.div
                 key={item.path}
                 variants={{
-                  hidden: { opacity: 0, y: 10 },
-                  visible: { opacity: 1, y: 0 }
+                  hidden: { opacity: 0, scale: 0.9 },
+                  visible: { opacity: 1, scale: 1 }
                 }}
               >
                 <Link
                   to={item.path}
-                  className={`flex items-center gap-3 px-6 py-2 transition-all relative group rounded-xl border ${
+                  className={`flex items-center gap-2 px-5 py-2 transition-all relative group rounded-xl border whitespace-nowrap ${
                     isActive 
                       ? 'text-brand-primary bg-brand-primary/10 border-brand-primary/20' 
                       : 'text-slate-500 hover:text-slate-100 hover:bg-white/5 border-transparent'
                   }`}
                 >
-                  <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                  <span className={`text-sm font-bold tracking-tight ${isActive ? 'text-white' : 'text-slate-500'}`}>{item.label}</span>
+                  <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-brand-primary' : 'text-slate-500 group-hover:text-slate-300'} />
+                  <span className={`text-[11px] font-black uppercase tracking-widest ${isActive ? 'text-white' : 'text-slate-500'}`}>{item.label}</span>
                   
                   {isActive && (
                     <motion.div 
                       layoutId="nav-indicator"
-                      className="absolute -bottom-[1px] left-0 right-0 h-0.5 bg-brand-primary shadow-[0_0_10px_rgba(74,222,128,1)]"
+                      className="absolute inset-0 border border-brand-primary/30 rounded-xl"
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -287,6 +290,7 @@ export default function Dashboard() {
             >
               <Routes>
                 <Route index element={<Overview />} />
+                <Route path="analytics" element={<Analytics />} />
                 <Route path="goals" element={<GoalsTargets />} />
                 <Route path="hieas" element={<Hieas />} />
                 <Route path="projects" element={<Projects />} />
@@ -303,6 +307,7 @@ export default function Dashboard() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#020617]/95 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-2 z-[50]">
         {[
           { path: '/dashboard', label: 'المتابعة', icon: LayoutDashboard },
+          { path: '/dashboard/analytics', label: 'الإحصائيات', icon: BarChart3 },
           { path: '/dashboard/projects', label: 'المشاريع', icon: Briefcase },
           { path: '/dashboard/goals', label: 'الأهداف', icon: Target },
           { path: '/dashboard/calendar', label: 'التقويم', icon: CalendarIcon },

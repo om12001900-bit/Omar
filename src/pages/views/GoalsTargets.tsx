@@ -13,6 +13,7 @@ import {
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
+import PerformanceTracker from '../../components/PerformanceTracker';
 import { GoalType, GoalCategory, Goal, Milestone } from '../../types';
 
 export default function GoalsTargets() {
@@ -485,6 +486,16 @@ export default function GoalsTargets() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                      <div className="space-y-10">
+                        {/* Performance Monitor Block */}
+                        <div className="glass rounded-none p-10 border border-white/5 bg-white/[0.01]">
+                           <PerformanceTracker 
+                             entityId={selectedGoal.id} 
+                             collectionName="goals" 
+                             logs={selectedGoal.performanceLogs} 
+                             accentColor={selectedGoal.type === GoalType.OBJECTIVE ? '#4ade80' : '#2dd4bf'}
+                           />
+                        </div>
+
                         {/* Time Block */}
                         <div className="glass rounded-none p-10 border border-white/5 space-y-8 bg-white/[0.01]">
                            <div className="flex items-center gap-4">

@@ -8,7 +8,39 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Goal, Hiea, Project, Conference } from '../types';
+import { Goal, Hiea, Project, Conference, Plan } from '../types';
+
+export function usePlans() {
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const q = query(
+      collection(db, 'plans'), 
+      where('ownerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data({ serverTimestamps: 'estimate' }) 
+      })) as Plan[];
+      setPlans(data);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching plans:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  return { plans, loading };
+}
 
 export function useGoals() {
   const [goals, setGoals] = useState<Goal[]>([]);

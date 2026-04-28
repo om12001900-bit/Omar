@@ -10,6 +10,7 @@
         "email": { "type": "string" },
         "phoneNumber": { "type": "string" },
         "photoURL": { "type": "string" },
+        "lastCheckInDate": { "type": "string" },
         "settings": {
           "type": "object",
           "properties": {
@@ -37,6 +38,10 @@
         "projectId": { "type": "string" },
         "category": { "type": "string", "enum": ["OV9", "S15"] },
         "progress": { "type": "number" },
+        "performanceLogs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PerformanceLog" }
+        },
         "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -55,10 +60,26 @@
         "logoUrl": { "type": "string" },
         "color": { "type": "string" },
         "progress": { "type": "number" },
+        "performanceLogs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PerformanceLog" }
+        },
         "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "ownerId", "createdAt"]
+    },
+    "PerformanceLog": {
+      "title": "Performance Log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "value": { "type": "number" },
+        "note": { "type": "string" },
+        "date": { "type": "string" },
+        "recordedBy": { "type": "string" },
+        "recordedAt": { "type": "string" }
+      }
     },
     "Project": {
       "title": "Project",
@@ -70,12 +91,16 @@
         "description": { "type": "string" },
         "startDate": { "type": "string", "format": "date" },
         "endDate": { "type": "string", "format": "date" },
-        "status": { "type": "string", "enum": ["upcoming", "in-progress", "completed"] },
+        "status": { "type": "string", "enum": ["upcoming", "in-progress", "pending_completion", "completed"] },
         "progress": { "type": "number" },
         "hieaId": { "type": "string" },
         "hieaIds": { 
           "type": "array",
           "items": { "type": "string" }
+        },
+        "performanceLogs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PerformanceLog" }
         },
         "icon": { "type": "string" },
         "ownerId": { "type": "string" },
@@ -121,6 +146,49 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "date", "startTime", "endTime", "ownerId", "createdAt"]
+    },
+    "Plan": {
+      "title": "Plan",
+      "description": "Strategic plan for an entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "hieaId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "stages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "goals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "text": { "type": "string" },
+                    "completed": { "type": "boolean" }
+                  }
+                }
+              },
+              "startDate": { "type": "string", "format": "date" },
+              "endDate": { "type": "string", "format": "date" },
+              "status": { "type": "string", "enum": ["pending", "in-progress", "completed"] }
+            }
+          }
+        },
+        "performanceIndicator": { "type": "number" },
+        "progress": { "type": "number" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["hieaId", "title", "ownerId", "createdAt"]
     }
   },
   "firestore": {
@@ -147,6 +215,10 @@
     "/calendar_events/{eventId}": {
       "schema": "CalendarEvent",
       "description": "Calendar events"
+    },
+    "/plans/{planId}": {
+      "schema": "Plan",
+      "description": "Entity strategic plans"
     }
   }
 }

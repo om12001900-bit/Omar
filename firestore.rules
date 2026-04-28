@@ -27,6 +27,13 @@ service cloud.firestore {
       return resource.data;
     }
 
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email in ['om12001900@gmail.com', 'om12101900@gmail.com'])
+      );
+    }
+
     // --- Entity Validations ---
     function isValidUser(data) {
       return data.uid == request.auth.uid &&
@@ -39,11 +46,12 @@ service cloud.firestore {
     }
 
     function isValidGoal(data) {
-      return data.ownerId == request.auth.uid &&
+      return (data.ownerId == request.auth.uid || isAdmin()) &&
              data.name is string && data.name.size() <= 200 &&
              data.type in ['objective', 'target'] &&
              data.category in ['OV9', 'S15'] &&
              (!data.keys().contains('progress') || data.progress is number) &&
+             (!data.keys().contains('performanceLogs') || data.performanceLogs is list) &&
              (!data.keys().contains('hieaId') || data.hieaId == '' || isValidId(data.hieaId)) &&
              (!data.keys().contains('startDate') || data.startDate is string) &&
              (!data.keys().contains('endDate') || data.endDate is string) &&
@@ -51,17 +59,19 @@ service cloud.firestore {
     }
 
     function isValidHiea(data) {
-      return data.ownerId == request.auth.uid &&
+      return (data.ownerId == request.auth.uid || isAdmin()) &&
              data.name is string && data.name.size() <= 200 &&
              (!data.keys().contains('color') || data.color is string) &&
              (!data.keys().contains('logoUrl') || data.logoUrl is string) &&
+             (!data.keys().contains('progress') || data.progress is number) &&
+             (!data.keys().contains('performanceLogs') || data.performanceLogs is list) &&
              data.createdAt != null;
     }
 
     function isValidProject(data) {
-      return data.ownerId == request.auth.uid &&
+      return (data.ownerId == request.auth.uid || isAdmin()) &&
              data.name is string && data.name.size() <= 200 &&
-             data.status in ['upcoming', 'in-progress', 'completed'] &&
+             data.status in ['upcoming', 'in-progress', 'pending_completion', 'completed'] &&
              data.progress is number &&
              data.progress >= 0 && data.progress <= 100 &&
              (!data.keys().contains('description') || data.description is string) &&
@@ -73,6 +83,7 @@ service cloud.firestore {
              (!data.keys().contains('tags') || data.tags is list) &&
              (!data.keys().contains('icon') || data.icon is string) &&
              (!data.keys().contains('milestones') || data.milestones is list) &&
+             (!data.keys().contains('performanceLogs') || data.performanceLogs is list) &&
              data.createdAt != null;
     }
 
@@ -95,6 +106,19 @@ service cloud.firestore {
              data.createdAt != null;
     }
 
+    function isValidPlan(data) {
+      return (data.ownerId == request.auth.uid || isAdmin()) &&
+             (!data.keys().contains('title') || (data.title is string && data.title.size() <= 200)) &&
+             (!data.keys().contains('hieaId') || isValidId(data.hieaId)) &&
+             (!data.keys().contains('description') || data.description is string) &&
+             (!data.keys().contains('startDate') || data.startDate is string) &&
+             (!data.keys().contains('endDate') || data.endDate is string) &&
+             (!data.keys().contains('stages') || data.stages is list) &&
+             (!data.keys().contains('performanceIndicator') || data.performanceIndicator is number) &&
+             (!data.keys().contains('progress') || data.progress is number) &&
+             (!data.keys().contains('createdAt') || data.createdAt != null);
+    }
+
     // --- Resource Routes ---
 
     match /users/{userId} {
@@ -105,34 +129,46 @@ service cloud.firestore {
     }
 
     match /goals/{goalId} {
-      allow get: if isOwner(existing().ownerId);
-      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow get: if isOwner(existing().ownerId) || isAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
       allow create: if isOwner(incoming().ownerId) && isValidId(goalId) && isValidGoal(incoming());
-      allow update: if isOwner(existing().ownerId) && isValidGoal(incoming()) &&
+      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isValidGoal(incoming()) &&
                     incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'category', 'progress', 'milestones', 'startDate', 'endDate', 'projectId', 'hieaId', 'updatedAt']);
-      allow delete: if isOwner(existing().ownerId);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'category', 'progress', 'milestones', 'startDate', 'endDate', 'projectId', 'hieaId', 'performanceLogs', 'updatedAt']);
+      allow delete: if isOwner(existing().ownerId) || isAdmin();
     }
 
     match /hieas/{hieaId} {
-      allow get: if isOwner(existing().ownerId);
-      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow get: if isOwner(existing().ownerId) || isAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
       allow create: if isOwner(incoming().ownerId) && isValidId(hieaId) && isValidHiea(incoming());
-      allow update: if isOwner(existing().ownerId) && isValidHiea(incoming()) &&
+      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isValidHiea(incoming()) &&
                     incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'laws', 'procedures', 'achievements', 'logoUrl', 'color', 'progress', 'goalIds', 'updatedAt']);
-      allow delete: if isOwner(existing().ownerId);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'laws', 'procedures', 'achievements', 'logoUrl', 'color', 'progress', 'goalIds', 'performanceLogs', 'updatedAt']);
+      allow delete: if isOwner(existing().ownerId) || isAdmin();
     }
 
     match /projects/{projectId} {
       allow get: if isOwner(existing().ownerId);
-      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
       allow create: if isOwner(incoming().ownerId) && isValidProject(incoming());
-      allow update: if isOwner(existing().ownerId) &&
+      allow update: if (isOwner(existing().ownerId) || isAdmin()) &&
                     isValidProject(incoming()) &&
                     incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'startDate', 'endDate', 'status', 'progress', 'milestones', 'hieaId', 'hieaIds', 'goalId', 'tags', 'icon', 'updatedAt']);
-      allow delete: if isOwner(existing().ownerId);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'startDate', 'endDate', 'status', 'progress', 'milestones', 'hieaId', 'hieaIds', 'goalId', 'tags', 'icon', 'performanceLogs', 'updatedAt']) &&
+                    (
+                      // Only admins can move to 'completed'
+                      (incoming().status != 'completed' || isAdmin()) ||
+                      // Or if it was already completed (maybe updating other fields?) 
+                      // Actually, if it's completed, it's terminal for owners usually.
+                      (existing().status == 'completed' && incoming().status == 'completed')
+                    );
+      allow delete: if isOwner(existing().ownerId) || isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /conferences/{conferenceId} {
@@ -153,6 +189,16 @@ service cloud.firestore {
                     incoming().ownerId == existing().ownerId &&
                     incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'date', 'type', 'priority', 'hieaId', 'projectId', 'isCompleted', 'updatedAt']);
       allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /plans/{planId} {
+      allow get: if isOwner(existing().ownerId) || isAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isOwner(incoming().ownerId) && isValidId(planId) && isValidPlan(incoming());
+      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isValidPlan(incoming()) &&
+                    incoming().ownerId == existing().ownerId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'startDate', 'endDate', 'stages', 'performanceIndicator', 'progress', 'updatedAt']);
+      allow delete: if isOwner(existing().ownerId) || isAdmin();
     }
   }
 }

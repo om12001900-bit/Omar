@@ -2,8 +2,7 @@ const CACHE_NAME = 'hieas-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.webmanifest',
-  '/favicon.ico'
+  '/manifest.webmanifest'
 ];
 
 self.addEventListener('install', (event) => {

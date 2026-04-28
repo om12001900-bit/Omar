@@ -15,6 +15,8 @@ import {
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
+import PerformanceTracker from '../../components/PerformanceTracker';
+import PlanManager from '../../components/PlanManager';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -33,6 +35,7 @@ export default function Hieas() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedHiea, setSelectedHiea] = useState<Hiea | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'plan'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'progress'>('name');
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; hieaId: string | null; name: string }>({
@@ -241,6 +244,7 @@ export default function Hieas() {
                         transition={{ delay: index * 0.05 }}
                         onClick={() => {
                           setSelectedHiea(hiea);
+                          setActiveTab('overview');
                           setEditContent({ 
                             laws: hiea.laws || '', 
                             procedures: hiea.procedures || '',
@@ -453,10 +457,34 @@ export default function Hieas() {
                   </div>
 
                   <div className="mt-12 h-px bg-gradient-to-l from-transparent via-white/5 to-transparent" />
+
+                  {/* Tab Navigation */}
+                  {!isEditing && (
+                    <div className="flex bg-[#020617] p-1.5 rounded-2xl border border-white/10 mt-8 max-w-md ml-auto">
+                      <button
+                        onClick={() => setActiveTab('overview')}
+                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                          activeTab === 'overview' ? 'bg-brand-primary text-brand-dark shadow-xl' : 'text-slate-600 hover:text-slate-400'
+                        }`}
+                      >
+                         نظرة عامة
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('plan')}
+                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                          activeTab === 'plan' ? 'bg-brand-primary text-brand-dark shadow-xl' : 'text-slate-600 hover:text-slate-400'
+                        }`}
+                      >
+                         الخطة الاستراتيجية
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="px-8 md:px-12 pb-12 space-y-12 text-right">
-                    {isEditing && (
+                    {activeTab === 'overview' || isEditing ? (
+                      <>
+                        {isEditing && (
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                         className="p-10 glass rounded-none border border-brand-primary/20 bg-brand-primary/[0.02] space-y-10"
@@ -633,6 +661,17 @@ export default function Hieas() {
                        </div>
                     )}
 
+                    {!isEditing && (
+                      <div className="p-10 glass rounded-none border border-white/5 bg-white/[0.01]">
+                        <PerformanceTracker 
+                          entityId={selectedHiea.id} 
+                          collectionName="hieas" 
+                          logs={selectedHiea.performanceLogs} 
+                          accentColor={selectedHiea.color}
+                        />
+                      </div>
+                    )}
+
                     {!isEditing && selectedHiea.achievements && (
                        <div className="p-10 glass rounded-none border border-brand-primary/10 space-y-6 bg-brand-primary/[0.01]">
                           <div className="flex items-center gap-4 flex-row-reverse">
@@ -788,12 +827,18 @@ export default function Hieas() {
                       )}
                     </section>
                   </div>
+                </>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <PlanManager hiea={selectedHiea} />
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
 
       {/* Add Hiea Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)} title="تأسيس هيئة استراتيجية جديدة">

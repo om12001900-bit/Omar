@@ -11,6 +11,7 @@ export enum GoalCategory {
 export enum ProjectStatus {
   UPCOMING = 'upcoming',
   IN_PROGRESS = 'in-progress',
+  PENDING_COMPLETION = 'pending_completion',
   COMPLETED = 'completed'
 }
 
@@ -39,7 +40,19 @@ export interface UserProfile {
   bio?: string;
   photoURL?: string;
   settings?: UserSettings;
+  lastCheckInDate?: string; // YYYY-MM-DD
   createdAt: FirestoreTimestamp;
+}
+
+export interface PerformanceLog {
+  id: string;
+  value: number; // For relative: delta. For cumulative: total.
+  type?: 'relative' | 'cumulative';
+  impact?: 'positive' | 'negative';
+  note: string;
+  date: string;
+  recordedBy: string;
+  recordedAt: FirestoreTimestamp;
 }
 
 export interface Goal {
@@ -53,6 +66,7 @@ export interface Goal {
   category: GoalCategory;
   progress: number;
   milestones: Milestone[];
+  performanceLogs?: PerformanceLog[];
   ownerId: string;
   createdAt: FirestoreTimestamp;
 }
@@ -67,6 +81,7 @@ export interface Hiea {
   color?: string;
   progress?: number;
   goalIds?: string[];
+  performanceLogs?: PerformanceLog[];
   ownerId: string;
   createdAt: FirestoreTimestamp;
 }
@@ -80,11 +95,44 @@ export interface Project {
   status: ProjectStatus;
   progress: number;
   milestones: Milestone[];
+  performanceLogs?: PerformanceLog[];
   hieaId?: string;
   hieaIds?: string[];
   goalId?: string;
   tags?: string[];
   icon?: string;
+  ownerId: string;
+  createdAt: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
+}
+
+export interface PlanStage {
+  id: string;
+  title: string;
+  goals: { 
+    id: string; 
+    text: string; 
+    completed: boolean;
+    kpiTitle?: string;
+    kpiTarget?: number;
+    kpiCurrent?: number;
+    kpiUnit?: string;
+  }[];
+  startDate: string;
+  endDate: string;
+  status: 'pending' | 'in-progress' | 'completed';
+}
+
+export interface Plan {
+  id: string;
+  hieaId: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  stages: PlanStage[];
+  performanceIndicator: number; // User-input target/result
+  progress: number; // Calculated progress from goals (0-100)
   ownerId: string;
   createdAt: FirestoreTimestamp;
   updatedAt?: FirestoreTimestamp;

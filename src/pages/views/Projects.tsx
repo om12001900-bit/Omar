@@ -4,7 +4,7 @@ import {
   LayoutGrid,
   GanttChart,
   Plus, 
-  Briefcase, 
+  Award, 
   Search,
   Trash2, 
   ChevronLeft, 
@@ -32,6 +32,7 @@ import {
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
+import PerformanceTracker from '../../components/PerformanceTracker';
 import { ProjectStatus, Project, Milestone } from '../../types';
 import ProjectGantt from '../../components/ProjectGantt';
 import ProjectIcon, { availableIcons } from '../../components/ProjectIcon';
@@ -41,6 +42,7 @@ export default function Projects() {
   const { goals } = useGoals();
   const { hieas } = useHieas();
   const { user } = useAuth();
+  const isAdmin = user?.email === 'om12001900@gmail.com';
   
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -65,7 +67,7 @@ export default function Projects() {
     hieaIds: [] as string[],
     goalId: '',
     tags: [] as string[],
-    icon: 'Briefcase',
+    icon: 'Award',
   });
 
   const [editData, setEditData] = useState<Partial<Project>>({
@@ -79,7 +81,7 @@ export default function Projects() {
     hieaIds: [] as string[],
     goalId: '',
     tags: [] as string[],
-    icon: 'Briefcase',
+    icon: 'Award',
   });
 
   useEffect(() => {
@@ -95,7 +97,7 @@ export default function Projects() {
         hieaIds: selectedProject.hieaIds || (selectedProject.hieaId ? [selectedProject.hieaId] : []),
         goalId: selectedProject.goalId || '',
         tags: selectedProject.tags || [],
-        icon: selectedProject.icon || 'Briefcase',
+        icon: selectedProject.icon || 'Award',
       });
       setIsEditing(false);
     }
@@ -112,7 +114,7 @@ export default function Projects() {
       hieaIds: [],
       goalId: '',
       tags: [],
-      icon: 'Briefcase',
+      icon: 'Award',
     });
     setNewTag('');
   };
@@ -122,8 +124,16 @@ export default function Projects() {
     if (!user) return;
 
     try {
+      let finalStatus = formData.status;
+      
+      // Approval Workflow: If creating as completed and not admin, set to pending_completion
+      if (finalStatus === ProjectStatus.COMPLETED && !isAdmin) {
+        finalStatus = ProjectStatus.PENDING_COMPLETION;
+      }
+
       await addDoc(collection(db, 'projects'), {
         ...formData,
+        status: finalStatus,
         hieaId: formData.hieaIds[0] || '',
         milestones: [],
         ownerId: user.uid,
@@ -140,8 +150,16 @@ export default function Projects() {
   const handleUpdate = async () => {
     if (!selectedProject) return;
     try {
+      let finalStatus = editData.status;
+      
+      // Approval Workflow: If moving to completed and not admin, set to pending_completion
+      if (finalStatus === ProjectStatus.COMPLETED && !isAdmin && selectedProject.status !== ProjectStatus.COMPLETED) {
+        finalStatus = ProjectStatus.PENDING_COMPLETION;
+      }
+
       const updatedData = {
         ...editData,
+        status: finalStatus,
         hieaId: editData.hieaIds && editData.hieaIds.length > 0 ? editData.hieaIds[0] : '',
         updatedAt: serverTimestamp()
       };
@@ -246,25 +264,25 @@ export default function Projects() {
           <p className="text-slate-500 font-bold text-sm md:text-base">تنسيق المبادرات الميدانية وتحديث مسارات الإنجاز بصورة تفاعلية</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-          <div className="flex bg-[#0a0a0b] p-1.5 rounded-2xl border border-white/5 w-full sm:w-auto">
-            <button 
-              onClick={() => setViewType('grid')}
-              className={`flex-1 sm:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 ${viewType === 'grid' ? 'bg-brand-secondary text-brand-dark shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
-              title="عرض الشبكة"
-            >
-              <LayoutGrid size={20} />
-              <span className="text-[10px] sm:hidden font-black uppercase tracking-widest">الآن</span>
-            </button>
-            <button 
-              onClick={() => setViewType('timeline')}
-              className={`flex-1 sm:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 ${viewType === 'timeline' ? 'bg-brand-secondary text-brand-dark shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
-              title="عرض الجدول الزمني"
-            >
-              <GanttChart size={20} />
-              <span className="text-[10px] sm:hidden font-black uppercase tracking-widest">تاريخ</span>
-            </button>
-          </div>
           <button 
+            id="projects-view-toggle-btn"
+            onClick={() => setViewType(viewType === 'grid' ? 'timeline' : 'grid')}
+            className="w-full md:w-auto bg-[#0a0a0b] text-slate-300 border border-white/10 font-black px-6 py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-white/5 hover:border-white/20 transition-all active:scale-[0.98] group shrink-0"
+          >
+            {viewType === 'grid' ? (
+              <>
+                <GanttChart size={20} className="text-brand-secondary group-hover:scale-110 transition-transform" />
+                <span className="text-sm tracking-tight">عرض الجدول الزمني</span>
+              </>
+            ) : (
+              <>
+                <LayoutGrid size={20} className="text-brand-secondary group-hover:scale-110 transition-transform" />
+                <span className="text-sm tracking-tight">الرجوع لشبكة المشاريع</span>
+              </>
+            )}
+          </button>
+          <button 
+            id="add-project-btn"
             onClick={() => {
               resetForm();
               setModalOpen(true);
@@ -296,6 +314,7 @@ export default function Projects() {
                         { id: 'all', label: 'الكل' },
                         { id: ProjectStatus.UPCOMING, label: 'قيد التخطيط' },
                         { id: ProjectStatus.IN_PROGRESS, label: 'نشطة' },
+                        { id: ProjectStatus.PENDING_COMPLETION, label: 'بانتظار الاعتماد' },
                         { id: ProjectStatus.COMPLETED, label: 'منجزة' }
                       ].map(filter => (
                         <button
@@ -401,7 +420,7 @@ export default function Projects() {
                                 hieaIds: project.hieaIds || (project.hieaId ? [project.hieaId] : []),
                                 goalId: project.goalId || '',
                                 tags: project.tags || [],
-                                icon: project.icon || 'Briefcase',
+                                icon: project.icon || 'Award',
                               });
                               setIsEditing(false);
                             }}
@@ -490,7 +509,9 @@ export default function Projects() {
                                  <div className="flex flex-col">
                                     <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">الحالة التنفيذية</span>
                                     <span className="text-[10px] font-bold uppercase tracking-tight" style={{ color: themeColor }}>
-                                      {project.status === 'completed' ? 'تم الإنجاز' : project.status === 'in-progress' ? 'نشط ميدانياً' : 'مرحلة التخطيط'}
+                                      {project.status === 'completed' ? 'تم الإنجاز' : 
+                                       project.status === 'pending_completion' ? 'بانتظار الاعتماد' :
+                                       project.status === 'in-progress' ? 'نشط ميدانياً' : 'مرحلة التخطيط'}
                                     </span>
                                  </div>
                                  <div className="flex gap-2">
@@ -522,7 +543,7 @@ export default function Projects() {
                                          hieaIds: project.hieaIds || (project.hieaId ? [project.hieaId] : []),
                                          goalId: project.goalId || '',
                                          tags: project.tags || [],
-                                         icon: project.icon || 'Briefcase',
+                                         icon: project.icon || 'Award',
                                        });
                                        setIsEditing(false);
                                      }}
@@ -561,7 +582,7 @@ export default function Projects() {
                         hieaIds: project.hieaIds || (project.hieaId ? [project.hieaId] : []),
                         goalId: project.goalId || '',
                         tags: project.tags || [],
-                        icon: project.icon || 'Briefcase',
+                        icon: project.icon || 'Award',
                       });
                       setIsEditing(false);
                     }}
@@ -572,7 +593,7 @@ export default function Projects() {
                   <div className="text-center py-40">
                     <div className="relative inline-block mb-8">
                        <div className="absolute inset-0 bg-brand-secondary/10 blur-[80px] animate-pulse" />
-                       <Briefcase size={80} className="relative z-10 text-slate-800 opacity-20" />
+                       <Award size={80} className="relative z-10 text-slate-800 opacity-20" />
                     </div>
                     <p className="text-sm font-black uppercase tracking-[0.4em] text-slate-500 opacity-20">بانتظار تأسيس أول مبادرة تنفيذية</p>
                   </div>
@@ -637,7 +658,8 @@ export default function Projects() {
                               >
                                 <option value={ProjectStatus.UPCOMING} className="bg-slate-900">قيد التخطيط</option>
                                 <option value={ProjectStatus.IN_PROGRESS} className="bg-slate-900">قيد التنفيذ</option>
-                                <option value={ProjectStatus.COMPLETED} className="bg-slate-900">مكتمل</option>
+                                <option value={ProjectStatus.PENDING_COMPLETION} className="bg-slate-900">إرسال لطلب الاعتماد</option>
+                                <option value={ProjectStatus.COMPLETED} className="bg-slate-900">مكتمل {isAdmin ? '(اعتماد فوري)' : '(يتطلب اعتماد)'}</option>
                               </select>
                               <div className="space-y-2">
                                 <label className="block text-[10px] font-black uppercase text-slate-600 tracking-widest px-2">الارتباط بالهيئات</label>
@@ -780,6 +802,30 @@ export default function Projects() {
                             </div>
                           )}
                           <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 py-2 border-y border-white/[0.03]">
+                            {selectedProject.status === ProjectStatus.PENDING_COMPLETION && (
+                              <div className="flex items-center gap-3 bg-brand-secondary/10 border border-brand-secondary/30 px-6 py-3 w-full md:w-auto relative group/approve">
+                                <AlertCircle size={18} className="text-brand-secondary" />
+                                <div className="text-right">
+                                  <p className="text-[10px] font-black text-white uppercase tracking-widest">تنبيه: بانتظار الاعتماد</p>
+                                  <p className="text-[9px] text-brand-secondary/60 font-bold">تم تقديم طلب إغلاق هذا المشروع بنجاح</p>
+                                </div>
+                                {isAdmin && (
+                                  <button 
+                                    onClick={async () => {
+                                      try {
+                                        await updateDoc(doc(db, 'projects', selectedProject.id), { status: ProjectStatus.COMPLETED, updatedAt: serverTimestamp() });
+                                        setSelectedProject({ ...selectedProject, status: ProjectStatus.COMPLETED });
+                                      } catch (err) {
+                                        handleFirestoreError(err, OperationType.UPDATE, `projects/${selectedProject.id}`);
+                                      }
+                                    }}
+                                    className="mr-auto bg-brand-secondary text-brand-dark px-4 py-1.5 text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_15px_rgba(45,212,191,0.3)]"
+                                  >
+                                    اعتماد الإغلاق النهائي
+                                  </button>
+                                )}
+                              </div>
+                            )}
                             <div className="flex items-center gap-2 flex-row-reverse">
                               <span className="w-1.5 h-1.5 bg-brand-secondary shadow-[0_0_8px_rgba(45,212,191,0.5)]" />
                               <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">O.V.9 STRATEGIC INITIATIVE</span>
@@ -1061,6 +1107,16 @@ export default function Projects() {
                                 <p className="text-sm md:text-base text-slate-300 font-medium leading-[2] bg-white/[0.02] p-10 rounded-none border border-white/5 italic text-justify">
                                     {selectedProject.description || 'لا يتوفر وصف معمق متاح لهذا المسار التنفيذي حالياً في قاعدة البيانات الاستراتيجية.'}
                                 </p>
+                                
+                                <div className="mt-10">
+                                   <PerformanceTracker 
+                                     entityId={selectedProject.id} 
+                                     collectionName="projects" 
+                                     logs={selectedProject.performanceLogs} 
+                                     accentColor={projectThemeColor}
+                                   />
+                                </div>
+
                                 <div className="mt-6 flex items-center gap-4 text-slate-600">
                                    <div className="h-px flex-1 bg-white/5" />
                                    <span className="text-[9px] font-black uppercase tracking-widest">End of Summary</span>
@@ -1154,7 +1210,7 @@ export default function Projects() {
                                        className="w-10 h-10 border flex items-center justify-center shrink-0 transition-all bg-white/5"
                                        style={{ borderColor: `${pColor}40`, color: pColor }}
                                      >
-                                       <ProjectIcon name={p.icon || 'Briefcase'} size={18} />
+                                       <ProjectIcon name={p.icon || 'Award'} size={18} />
                                      </div>
                                    </motion.button>
                                  );
@@ -1443,7 +1499,7 @@ export default function Projects() {
                   {[
                     { id: ProjectStatus.UPCOMING, label: 'قيد التخطيط' },
                     { id: ProjectStatus.IN_PROGRESS, label: 'نشط تنفيذياً' },
-                    { id: ProjectStatus.COMPLETED, label: 'مكتمل' }
+                    { id: ProjectStatus.COMPLETED, label: isAdmin ? 'مكتمل (اعتماد فوري)' : 'طلب اعتماد الإكمال' }
                   ].map(status => (
                     <button
                       key={status.id}
