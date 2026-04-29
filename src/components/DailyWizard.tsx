@@ -11,7 +11,7 @@ import {
   AlertCircle,
   Sparkles
 } from 'lucide-react';
-import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useGoals, useHieas, usePlans } from '../hooks/useData';
@@ -99,7 +99,7 @@ export default function DailyWizard() {
             note: value > 0 ? 'تطور إيجابي' : value < 0 ? 'تحديات تنفيذية' : 'استقرار الموقف',
             date: new Date().toISOString().split('T')[0],
             recordedBy: user.uid,
-            recordedAt: serverTimestamp()
+            recordedAt: new Date().toISOString()
           })
         });
       } else if (item.type === 'plan_goal') {
@@ -138,7 +138,7 @@ export default function DailyWizard() {
             note: 'تحديث حالة الهيئة اليومي',
             date: new Date().toISOString().split('T')[0],
             recordedBy: user.uid,
-            recordedAt: serverTimestamp()
+            recordedAt: new Date().toISOString()
           })
         });
       }
@@ -193,9 +193,17 @@ export default function DailyWizard() {
                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">Strategy Pulse Check-in</p>
               </div>
             </div>
-            <span className="text-[10px] font-black text-brand-primary px-3 py-1 bg-brand-primary/10 rounded-full">
-              {step + 1} / {items.length}
-            </span>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest bg-white/5 px-4 py-2 rounded-xl transition-all"
+              >
+                تأجيل المراجعة
+              </button>
+              <span className="text-[10px] font-black text-brand-primary px-3 py-1 bg-brand-primary/10 rounded-full">
+                {step + 1} / {items.length}
+              </span>
+            </div>
           </div>
           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden flex gap-1">
             {items.map((_, i) => (
@@ -287,10 +295,27 @@ export default function DailyWizard() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="mt-16 pt-10 border-t border-white/5 text-center">
-           <div className="flex items-center justify-center gap-3 text-slate-700 text-[11px] font-bold italic">
+        <div className="mt-16 pt-10 border-t border-white/5 flex items-center justify-between">
+           <div className="flex items-center gap-3 text-slate-700 text-[11px] font-bold italic">
               <AlertCircle size={14} />
-              سيتم تخزين تحديثات اليوم تلقائياً فور اختيارك
+              سيتم تخزين التحديث تلقائياً فور الاختيار
+           </div>
+           
+           <div className="flex items-center gap-4">
+              <button
+                disabled={step === 0}
+                onClick={() => setStep(prev => prev - 1)}
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-white/5 transition-all disabled:opacity-20"
+              >
+                السابق
+              </button>
+              <button
+                disabled={step === items.length - 1}
+                onClick={() => setStep(prev => prev + 1)}
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-brand-primary border border-brand-primary/20 hover:bg-brand-primary/10 transition-all disabled:opacity-20"
+              >
+                التالي
+              </button>
            </div>
         </div>
         
