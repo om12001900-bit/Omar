@@ -92,7 +92,7 @@ export const Logo: React.FC<LogoProps> = ({ className = '', showText = true }) =
               strokeWidth="2.5"
               strokeLinecap="round"
               initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 0.3 }}
+              animate={{ pathLength: 1, opacity: 1 }}
               transition={{ duration: 1.8, ease: "easeInOut", delay: 0.2 }}
             />
 

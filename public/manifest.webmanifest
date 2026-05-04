@@ -10,16 +10,16 @@
   "lang": "ar",
   "icons": [
     {
-      "src": "https://api.dicebear.com/7.x/identicon/svg?seed=ov9-vision",
-      "sizes": "192x192",
+      "src": "/icon.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "https://api.dicebear.com/7.x/identicon/svg?seed=ov9-vision",
+      "src": "/icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "maskable"
     }
   ]
 }

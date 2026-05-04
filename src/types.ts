@@ -32,6 +32,15 @@ export interface UserSettings {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FirestoreTimestamp = any;
 
+export interface DailyReviewConfig {
+  itemId: string;
+  type: 'goal' | 'plan_goal' | 'hiea' | 'project';
+  startDate: string;
+  endDate: string;
+  planId?: string; // For plan_goals
+  stageId?: string; // For plan_goals
+}
+
 export interface UserProfile {
   uid: string;
   displayName: string;
@@ -41,6 +50,7 @@ export interface UserProfile {
   photoURL?: string;
   settings?: UserSettings;
   lastCheckInDate?: string; // YYYY-MM-DD
+  dailyReviewItems?: DailyReviewConfig[];
   createdAt: FirestoreTimestamp;
 }
 

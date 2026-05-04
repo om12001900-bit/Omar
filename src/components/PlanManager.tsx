@@ -176,11 +176,16 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
     handleUpdateStage(plan, [...plan.stages, newStage]);
   };
 
-  const removePlan = async (id: string) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذه الخطة؟')) return;
+  const removePlan = async (id: string, title?: string) => {
+    if (title) {
+      setDeleteConfirm({ isOpen: true, planId: id, title });
+      return;
+    }
+    
     try {
       await deleteDoc(doc(db, 'plans', id));
       if (selectedPlanId === id) setSelectedPlanId(null);
+      setDeleteConfirm({ isOpen: false, planId: null, title: '' });
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `plans/${id}`);
     }
@@ -188,6 +193,11 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
 
   const [activeStageId, setActiveStageId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; planId: string | null; title: string }>({
+    isOpen: false,
+    planId: null,
+    title: ''
+  });
 
   useEffect(() => {
     const selectedPlan = plans.find(p => p.id === selectedPlanId);
@@ -348,10 +358,10 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
             </div>
           ) : (
             plans.map(plan => (
-              <button
+              <div
                 key={plan.id}
                 onClick={() => setSelectedPlanId(plan.id)}
-                className={`w-full text-right p-5 rounded-2xl border transition-all group ${
+                className={`w-full text-right p-5 rounded-2xl border transition-all group relative cursor-pointer ${
                   selectedPlanId === plan.id 
                   ? 'bg-brand-primary border-brand-primary text-brand-dark shadow-xl shadow-brand-primary/20' 
                   : 'bg-[#020617] border-white/5 text-slate-400 hover:border-white/20 hover:text-white'
@@ -361,7 +371,20 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
                   <span className={`text-[9px] font-black uppercase tracking-widest ${selectedPlanId === plan.id ? 'text-brand-dark/60' : 'text-slate-600'}`}>
                     {plan.startDate} - {plan.endDate}
                   </span>
-                  <TrendingUp size={14} className={selectedPlanId === plan.id ? 'text-brand-dark' : 'text-brand-primary'} />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removePlan(plan.id, plan.title);
+                      }}
+                      className={`p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all ${
+                        selectedPlanId === plan.id ? 'text-brand-dark hover:bg-brand-dark/10' : 'text-red-500 hover:bg-red-500/10'
+                      }`}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                    <TrendingUp size={14} className={selectedPlanId === plan.id ? 'text-brand-dark' : 'text-brand-primary'} />
+                  </div>
                 </div>
                 <h4 className="font-black text-sm truncate">{plan.title}</h4>
                   <div className={`mt-3 flex items-center gap-2`}>
@@ -373,7 +396,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
                   </div>
                   <span className="text-[10px] font-black">{plan.progress || 0}%</span>
                 </div>
-              </button>
+              </div>
             ))
           )}
         </div>
@@ -388,7 +411,24 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
                 <div className="p-8 relative z-10">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h2 className="text-3xl font-black text-white mb-2">{selectedPlan.title}</h2>
+                      {isEditing ? (
+                        <input 
+                          value={selectedPlan.title}
+                          onChange={async (e) => {
+                            try {
+                              await updateDoc(doc(db, 'plans', selectedPlan.id), {
+                                title: e.target.value,
+                                updatedAt: serverTimestamp()
+                              });
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                          className="text-3xl font-black text-white mb-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-brand-primary w-full"
+                        />
+                      ) : (
+                        <h2 className="text-3xl font-black text-white mb-2">{selectedPlan.title}</h2>
+                      )}
                       <div className="flex items-center gap-4 text-slate-500 text-xs font-bold">
                         <span className="flex items-center gap-1.5"><Calendar size={14} /> {selectedPlan.startDate}</span>
                         <ChevronRight size={12} className="rotate-180" />
@@ -408,14 +448,31 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
                         <Layout size={18} />
                       </button>
                       <button 
-                        onClick={() => removePlan(selectedPlan.id)}
+                        onClick={() => removePlan(selectedPlan.id, selectedPlan.title)}
                         className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"
                       >
                         <Trash2 size={18} />
                       </button>
                     </div>
                   </div>
-                  <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{selectedPlan.description}</p>
+                  {isEditing ? (
+                    <textarea 
+                      value={selectedPlan.description}
+                      onChange={async (e) => {
+                        try {
+                          await updateDoc(doc(db, 'plans', selectedPlan.id), {
+                            description: e.target.value,
+                            updatedAt: serverTimestamp()
+                          });
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
+                      className="text-slate-400 text-sm leading-relaxed max-w-2xl bg-white/5 border border-white/10 rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary h-24 resize-none"
+                    />
+                  ) : (
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{selectedPlan.description}</p>
+                  )}
                 </div>
 
                 {/* Main Progress & Strategic Linkage */}
@@ -974,6 +1031,36 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
           )}
         </div>
       </div>
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#020617]/90 backdrop-blur-md" onClick={() => setDeleteConfirm({ ...deleteConfirm, isOpen: false })} />
+          <div className="relative bg-[#0a0a0b] border border-white/10 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center text-red-500 mb-8 mx-auto">
+              <Trash2 size={40} />
+            </div>
+            <h3 className="text-2xl font-black text-white text-center mb-4">حذف الخطة الإستراتيجية</h3>
+            <p className="text-slate-500 text-center text-sm leading-relaxed mb-8">
+              هل أنت متأكد من رغبتك في حذف <span className="text-white font-bold">"{deleteConfirm.title}"</span>؟ 
+              سيؤدي هذا الإجراء إلى حذف جميع المراحل والأهداف المرتبطة بها نهائياً.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setDeleteConfirm({ ...deleteConfirm, isOpen: false })}
+                className="flex-1 py-4 rounded-2xl bg-white/5 text-slate-400 font-black text-sm hover:bg-white/10 transition-all"
+              >
+                تراجـع
+              </button>
+              <button
+                onClick={() => deleteConfirm.planId && removePlan(deleteConfirm.planId)}
+                className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-black text-sm hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+              >
+                تـأكيد الحـذف
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -52,9 +52,10 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState('');
   const [newTag, setNewTag] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | 'all'>('all');
-  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; projectId: string | null }>({
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; projectId: string | null; projectName: string }>({
     isOpen: false,
-    projectId: null
+    projectId: null,
+    projectName: ''
   });
 
   const [formData, setFormData] = useState({
@@ -188,16 +189,16 @@ export default function Projects() {
     try {
       await deleteDoc(doc(db, 'projects', deleteConfirm.projectId));
       if (selectedProject?.id === deleteConfirm.projectId) setSelectedProject(null);
-      setDeleteConfirm({ isOpen: false, projectId: null });
+      setDeleteConfirm({ isOpen: false, projectId: null, projectName: '' });
     } catch (err) {
       console.error(err);
       handleFirestoreError(err, OperationType.DELETE, `projects/${deleteConfirm.projectId}`);
     }
   };
 
-  const openDeleteConfirm = (e: React.MouseEvent, id: string) => {
+  const openDeleteConfirm = (e: React.MouseEvent, id: string, name: string) => {
     e.stopPropagation();
-    setDeleteConfirm({ isOpen: true, projectId: id });
+    setDeleteConfirm({ isOpen: true, projectId: id, projectName: name });
   };
 
   const addMilestone = () => {
@@ -516,7 +517,7 @@ export default function Projects() {
                                  </div>
                                  <div className="flex gap-2">
                                    <button 
-                                     onClick={(e) => openDeleteConfirm(e, project.id)}
+                                     onClick={(e) => openDeleteConfirm(e, project.id, project.name)}
                                      className="p-3 text-red-500/50 hover:text-red-500 bg-red-500/5 hover:bg-red-500/10 transition-all rounded-none border border-red-500/10"
                                      title="حذف المشروع"
                                    >
@@ -853,7 +854,7 @@ export default function Projects() {
                         </button>
                         {!isEditing && (
                           <button 
-                            onClick={(e) => openDeleteConfirm(e, selectedProject.id)}
+                            onClick={(e) => openDeleteConfirm(e, selectedProject.id, selectedProject.name)}
                             className="w-full px-10 py-5 rounded-none border border-red-500/20 text-red-500 hover:bg-red-500/10 font-black flex items-center justify-center gap-3 transition-all"
                           >
                             <Trash2 size={20} />
@@ -1530,14 +1531,15 @@ export default function Projects() {
       {/* Delete Confirmation Modal */}
       <Modal 
         isOpen={deleteConfirm.isOpen} 
-        onClose={() => setDeleteConfirm({ isOpen: false, projectId: null })}
+        onClose={() => setDeleteConfirm({ isOpen: false, projectId: null, projectName: '' })}
         title="تأكيد الحذف النهائي"
       >
         <div className="text-right space-y-6">
           <div className="flex items-center gap-4 p-4 bg-red-500/10 border border-red-500/20 rounded-none">
             <AlertCircle className="text-red-500 shrink-0" size={24} />
-            <p className="text-sm text-slate-300 font-medium">
-              هل أنت متأكد من رغبتك في حذف هذا المشروع؟ هذا الإجراء نهائي ولا يمكن التراجع عنه، وسيؤدي إلى إزالة كافة البيانات والمراحل المرتبطة به.
+            <p className="text-sm text-slate-300 font-medium leading-relaxed">
+              هل أنت متأكد من رغبتك في حذف المشروع <span className="text-white font-black">"{deleteConfirm.projectName}"</span>؟ 
+              هذا الإجراء نهائي ولا يمكن التراجع عنه، وسيؤدي إلى إزالة كافة البيانات والمراحل المرتبطة به من السجلات الإستراتيجية.
             </p>
           </div>
           
@@ -1549,7 +1551,7 @@ export default function Projects() {
               نعم، أحذف المشروع نهائياً
             </button>
             <button 
-              onClick={() => setDeleteConfirm({ isOpen: false, projectId: null })}
+              onClick={() => setDeleteConfirm({ isOpen: false, projectId: null, projectName: '' })}
               className="flex-1 bg-white/5 text-slate-400 font-black py-4 hover:bg-white/10 border border-white/5 transition-all"
             >
               إلغاء العملية
