@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Layers, Briefcase, TrendingUp, Clock, Activity, Presentation } from 'lucide-react';
-import { useGoals, useHieas, useProjects, useConferences } from '../../hooks/useData';
+import { Target, Layers, Briefcase, TrendingUp, Clock, Activity, Presentation, Layout } from 'lucide-react';
+import { useGoals, useHieas, useProjects, useConferences, usePlans } from '../../hooks/useData';
 import { useAuth } from '../../contexts/AuthContext';
 import ProjectIcon from '../../components/ProjectIcon';
 import DailyWizard from '../../components/DailyWizard';
@@ -14,17 +14,26 @@ export default function Overview() {
   const { hieas } = useHieas();
   const { projects } = useProjects();
   const { conferences } = useConferences();
+  const { plans } = usePlans();
   const navigate = useNavigate();
 
-  const totalProgress = projects.length > 0 
-    ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length) 
+  // Calculate overall progress across all strategic pillars
+  const allEntities = [
+    ...(goals || []).map(g => g.progress || 0),
+    ...(hieas || []).map(h => h.progress || 0),
+    ...(projects || []).map(p => p.progress || 0),
+    ...(plans || []).map(pl => pl.progress || 0)
+  ].filter(v => typeof v === 'number' && !isNaN(v));
+
+  const totalProgress = allEntities.length > 0 
+    ? Math.round(allEntities.reduce((acc, val) => acc + val, 0) / allEntities.length) 
     : 0;
 
   const stats = [
     { label: 'الأهداف والمؤشرات', value: goals.length, icon: Target, color: 'text-brand-primary' },
-    { label: 'الهيئات الاستراتيجية', value: hieas.length, icon: Layers, color: 'text-emerald-400' },
     { label: 'المشاريع التنفيذية', value: projects.length, icon: Briefcase, color: 'text-teal-400' },
-    { label: 'المؤتمرات والفعاليات', value: conferences.length, icon: Presentation, color: 'text-brand-secondary' },
+    { label: 'الخطط الاستراتيجية', value: plans.length, icon: Layout, color: 'text-brand-secondary' },
+    { label: 'الهيئات الاستراتيجية', value: hieas.length, icon: Layers, color: 'text-emerald-400' },
   ];
 
   return (
@@ -145,10 +154,10 @@ export default function Overview() {
                       <div key={idx} className="space-y-2">
                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                           <span className="text-slate-400">{h.name}</span>
-                          <span className="text-brand-primary">78% تحقق</span>
+                          <span className="text-brand-primary">{h.progress || 0}% تحقق</span>
                         </div>
                         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                           <div className="h-full w-[78%] bg-brand-primary/30 rounded-full" />
+                           <div className="h-full bg-brand-primary/30 rounded-full" style={{ width: `${h.progress || 0}%` }} />
                         </div>
                       </div>
                     ))}

@@ -173,7 +173,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
       endDate: plan.endDate,
       status: 'pending'
     };
-    handleUpdateStage(plan, [...plan.stages, newStage]);
+    handleUpdateStage(plan, [...(plan.stages || []), newStage]);
   };
 
   const removePlan = async (id: string, title?: string) => {
@@ -201,7 +201,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
 
   useEffect(() => {
     const selectedPlan = plans.find(p => p.id === selectedPlanId);
-    if (selectedPlan && selectedPlan.stages.length > 0 && !activeStageId) {
+    if (selectedPlan && (selectedPlan.stages || []).length > 0 && !activeStageId) {
       setActiveStageId(selectedPlan.stages[0].id);
     }
   }, [plans, selectedPlanId, activeStageId]);
@@ -216,7 +216,8 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
 
   const isStageLocked = (stageIdx: number, plan: Plan) => {
     if (stageIdx === 0) return false;
-    const previousStage = plan.stages[stageIdx - 1];
+    const previousStage = (plan.stages || [])[stageIdx - 1];
+    if (!previousStage) return true;
     return previousStage.status !== 'completed';
   };
 
@@ -608,7 +609,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
                   )}
                 </div>
 
-                {selectedPlan.stages.length === 0 ? (
+                {selectedPlan.stages && selectedPlan.stages.length === 0 ? (
                   <div className="p-12 border border-dashed border-white/10 rounded-2xl text-center">
                     <p className="text-slate-600 text-sm font-bold mb-4">لا توجد مراحل محددة لهذه الخطة بعد</p>
                     {isEditing && (
@@ -629,7 +630,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) =>
                          {/* Connecting Line (Base) */}
                         <div className="absolute top-1/2 left-10 right-10 h-1.5 bg-white/5 -translate-y-1/2 z-0 rounded-full" />
                         
-                        {selectedPlan.stages.map((stage, idx) => {
+                        {(selectedPlan.stages || []).map((stage, idx) => {
                           const isLocked = isStageLocked(idx, selectedPlan);
                           const isActive = activeStageId === stage.id;
                           const isCompleted = stage.status === 'completed';

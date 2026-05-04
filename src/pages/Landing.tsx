@@ -3,11 +3,8 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, Target, Layers, Briefcase, Eye } from 'lucide-react';
 import { Logo } from '../components/Logo';
-import { usePWA } from '../hooks/usePWA';
 
 export default function Landing() {
-  const { isStandalone } = usePWA();
-
   return (
     <div className="relative min-h-screen overflow-hidden bg-brand-dark">
       {/* Background Decor */}

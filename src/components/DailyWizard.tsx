@@ -79,9 +79,9 @@ export default function DailyWizard() {
         .map(p => ({ ...p, type: 'project', title: p.name }));
 
       const filteredPlanGoals: WizardItem[] = [];
-      plans.forEach(p => {
-        p.stages.forEach(s => {
-          s.goals.forEach(sg => {
+      (plans || []).forEach(p => {
+        (p.stages || []).forEach(s => {
+          (s.goals || []).forEach(sg => {
             const cfg = reviewConfig.find(i => i.itemId === sg.id && i.type === 'plan_goal' && i.planId === p.id);
             if (cfg && today >= new Date(cfg.startDate) && today <= new Date(cfg.endDate)) {
               filteredPlanGoals.push({ 

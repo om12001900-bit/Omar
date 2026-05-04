@@ -79,9 +79,9 @@ export default function DailyReviewManager() {
   };
 
   const planGoalItems: { id: string; title: string; planId: string; stageId: string; planTitle: string; stageTitle: string }[] = [];
-  plans.forEach((p: Plan) => {
-    p.stages.forEach(s => {
-      s.goals.forEach(sg => {
+  (plans || []).forEach((p: Plan) => {
+    (p.stages || []).forEach(s => {
+      (s.goals || []).forEach(sg => {
         planGoalItems.push({ 
           id: sg.id,
           title: sg.text,

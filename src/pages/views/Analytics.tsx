@@ -36,7 +36,7 @@ import {
   Palette,
   Eye
 } from 'lucide-react';
-import { useGoals, useHieas, useProjects, useConferences } from '../../hooks/useData';
+import { useGoals, useHieas, useProjects, useConferences, usePlans } from '../../hooks/useData';
 import { ProjectStatus, GoalType } from '../../types';
 
 type ChartType = 'bar' | 'pie' | 'area' | 'line';
@@ -47,6 +47,7 @@ export default function Analytics() {
   const { hieas, loading: hieasLoading } = useHieas();
   const { projects, loading: projectsLoading } = useProjects();
   const { conferences, loading: conferencesLoading } = useConferences();
+  const { plans, loading: plansLoading } = usePlans();
 
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -63,7 +64,7 @@ export default function Analytics() {
 
   const [chartRadius, setChartRadius] = useState(60);
 
-  const isLoading = goalsLoading || hieasLoading || projectsLoading || conferencesLoading;
+  const isLoading = goalsLoading || hieasLoading || projectsLoading || conferencesLoading || plansLoading;
 
   // Data Preparation Logic
   const chartData = useMemo(() => {
@@ -108,7 +109,7 @@ export default function Analytics() {
         // Aggregate performance as average progress over time
         const monthlyData: Record<string, { total: number, count: number }> = {};
         
-        const allItems = [...projects, ...goals, ...hieas];
+        const allItems = [...projects, ...goals, ...hieas, ...plans];
         
         allItems.forEach(item => {
           if (item.performanceLogs && item.performanceLogs.length > 0) {

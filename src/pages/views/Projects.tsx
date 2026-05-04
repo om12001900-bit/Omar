@@ -504,7 +504,40 @@ export default function Projects() {
                                     </span>
                                   ))}
                               </div>
-                              <p className="text-xs text-slate-500 mb-8 line-clamp-3 leading-relaxed min-h-[4.5em]">{project.description || 'لا يوجد وصف متاح لهذا المشروع حالياً.'}</p>
+                              <p className="text-xs text-slate-500 mb-6 line-clamp-2 leading-relaxed min-h-[3em]">{project.description || 'لا يوجد وصف متاح لهذا المشروع حالياً.'}</p>
+                              
+                              {/* Milestones Preview */}
+                              {project.milestones && project.milestones.length > 0 && (
+                                <div className="space-y-2 mb-8 h-[100px] overflow-hidden relative">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <ListTodo size={12} className="text-slate-500" />
+                                    <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">المحطات الرئيسية</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {project.milestones.slice(0, 3).map((milestone) => (
+                                      <div key={milestone.id} className="flex items-center gap-2 group/ms">
+                                        <div className={`w-3 h-3 border shrink-0 flex items-center justify-center transition-all ${
+                                          milestone.completed 
+                                          ? 'bg-brand-secondary border-brand-secondary text-brand-dark' 
+                                          : 'border-white/10 text-transparent'
+                                        }`}>
+                                          <Check size={8} strokeWidth={4} />
+                                        </div>
+                                        <span className={`text-[11px] truncate ${milestone.completed ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
+                                          {milestone.title}
+                                        </span>
+                                      </div>
+                                    ))}
+                                    {project.milestones.length > 3 && (
+                                      <div className="text-[10px] text-slate-600 font-bold pr-5 mt-1 italic">
+                                        + {project.milestones.length - 3} محطات إضافية...
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Fade out effect if many milestones */}
+                                  <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-brand-dark/50 to-transparent pointer-events-none" />
+                                </div>
+                              )}
                               
                               <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
                                  <div className="flex flex-col">

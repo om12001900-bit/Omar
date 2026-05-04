@@ -17,7 +17,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { usePWA } from '../hooks/usePWA';
+import { useGoals, useHieas, useProjects, usePlans } from '../hooks/useData';
 
 import Overview from './views/Overview';
 import GoalsTargets from './views/GoalsTargets';
@@ -34,11 +34,27 @@ import { InstallPWA } from '../components/InstallPWA';
 
 export default function Dashboard() {
   const { profile, signOut } = useAuth();
-  const { isStandalone } = usePWA();
   const location = useLocation();
   const currentPath = location.pathname;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Strategic Data for Overall Progress
+  const { goals } = useGoals();
+  const { hieas } = useHieas();
+  const { projects } = useProjects();
+  const { plans } = usePlans();
+
+  const allProgressValues = [
+    ...(goals || []).map(g => g.progress || 0),
+    ...(hieas || []).map(h => h.progress || 0),
+    ...(projects || []).map(p => p.progress || 0),
+    ...(plans || []).map(pl => pl.progress || 0)
+  ].filter(v => !isNaN(v));
+
+  const globalProgress = allProgressValues.length > 0 
+    ? Math.round(allProgressValues.reduce((acc, v) => acc + v, 0) / allProgressValues.length)
+    : 0;
 
   const notifications = [
     { title: 'تم تحديث مشروع "النظام المركزي"', time: 'منذ دقيقتين' },
@@ -109,9 +125,22 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Side: Platform Branding */}
-        <div className="flex items-center gap-2 md:gap-4 text-left">
-          <div className="flex flex-col items-end">
+          <div className="flex items-center gap-2 md:gap-4 text-left">
+            {/* Global Progress Indicator */}
+            <Link 
+              to="/dashboard"
+              className="hidden lg:flex flex-col items-end mr-4 group px-4 py-1.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-brand-primary/5 hover:border-brand-primary/20 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] font-display font-black text-white leading-none">
+                  {globalProgress}%
+                </span>
+                <div className="w-1.5 h-1.5 rounded-full bg-brand-primary shadow-[0_0_8px_rgba(45,212,191,0.5)] animate-pulse" />
+              </div>
+              <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mt-1 group-hover:text-brand-primary transition-colors">Global Progress</span>
+            </Link>
+
+            <div className="flex flex-col items-end">
             <span className="text-lg md:text-2xl font-display font-black tracking-tighter text-white leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
               O.V.9 CONTROL
             </span>

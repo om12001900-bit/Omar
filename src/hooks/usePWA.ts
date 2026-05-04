@@ -38,11 +38,11 @@ export function usePWA() {
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
     try {
       mediaQuery.addEventListener('change', checkStandalone);
-    } catch (e) {
+    } catch {
       try {
         // Fallback for older browsers
-        mediaQuery.addListener(checkStandalone);
-      } catch (e2) {
+        (mediaQuery as unknown as { addListener: (cb: () => void) => void }).addListener(checkStandalone);
+      } catch {
         console.error('PWA matchMedia listeners not supported');
       }
     }
@@ -52,10 +52,10 @@ export function usePWA() {
       window.removeEventListener('appinstalled', handleAppInstalled);
       try {
         mediaQuery.removeEventListener('change', checkStandalone);
-      } catch (e) {
+      } catch {
         try {
-          mediaQuery.removeListener(checkStandalone);
-        } catch (e2) {
+          (mediaQuery as unknown as { removeListener: (cb: () => void) => void }).removeListener(checkStandalone);
+        } catch {
           // ignore
         }
       }
