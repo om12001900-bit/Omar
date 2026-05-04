@@ -34,12 +34,14 @@ import { Plan, PlanStage, Hiea } from '../types';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 interface PlanManagerProps {
-  hiea: Hiea;
+  hiea?: Hiea;
+  isGeneral?: boolean;
 }
 
-const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
+const PlanManager: React.FC<PlanManagerProps> = ({ hiea, isGeneral = false }) => {
   const { user } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [hieas, setHieas] = useState<Hiea[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -47,6 +49,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
   const [newPlan, setNewPlan] = useState({
     title: '',
     description: '',
+    hieaId: '',
     performanceIndicator: 0,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date((new Date()).setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
@@ -55,10 +58,30 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(
-      collection(db, 'plans'),
-      where('hieaId', '==', hiea.id)
-    );
+    if (isGeneral) {
+      const hieaQuery = query(collection(db, 'hieas'), where('ownerId', '==', user.uid));
+      const unsubHieas = onSnapshot(hieaQuery, (snapshot) => {
+        setHieas(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Hiea)));
+      });
+      return () => unsubHieas();
+    }
+  }, [user, isGeneral]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let q;
+    if (hiea && !isGeneral) {
+      q = query(
+        collection(db, 'plans'),
+        where('hieaId', '==', hiea.id)
+      );
+    } else {
+      q = query(
+        collection(db, 'plans'),
+        where('ownerId', '==', user.uid)
+      );
+    }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const plansData = snapshot.docs.map(doc => ({
@@ -72,7 +95,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
     });
 
     return () => unsubscribe();
-  }, [user, hiea.id]);
+  }, [user, hiea?.id, isGeneral]);
 
   const handleCreatePlan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +103,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
 
     try {
       const planData: Omit<Plan, 'id'> = {
-        hieaId: hiea.id,
+        hieaId: isGeneral ? (newPlan.hieaId || '') : (hiea?.id || ''),
         title: newPlan.title,
         description: newPlan.description,
         startDate: newPlan.startDate,
@@ -97,8 +120,10 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
       setNewPlan({
         title: '',
         description: '',
+        hieaId: '',
         startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date((new Date()).setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+        endDate: new Date((new Date()).setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+        performanceIndicator: 0
       });
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, 'plans');
@@ -127,9 +152,7 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
       });
 
       // Also update Hiea progress if this is the active plan? 
-      // For now, let's just keep them separate as per request "linked to hiea indicator".
-      // Implementation detail: we could update hiea.progress based on this plan's progress.
-      if (hiea.id) {
+      if (hiea && !isGeneral) {
         await updateDoc(doc(db, 'hieas', hiea.id), {
           progress: Math.max(hiea.progress || 0, progress),
           updatedAt: serverTimestamp()
@@ -287,6 +310,21 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-700 focus:outline-none focus:border-brand-primary/50 transition-all resize-none"
               />
             </div>
+            {isGeneral && (
+              <div className="md:col-span-2 space-y-2">
+                <label className="block text-[10px] font-black uppercase text-slate-600 tracking-widest px-1">ربط بالهيئة (اختياري)</label>
+                <select
+                  value={newPlan.hieaId}
+                  onChange={e => setNewPlan({...newPlan, hieaId: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-primary/50 transition-all"
+                >
+                  <option value="" className="bg-[#0a0a0b]">عامة (لجميع الهيئات)</option>
+                  {hieas.map(h => (
+                    <option key={h.id} value={h.id} className="bg-[#0a0a0b]">{h.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <button
             type="submit"
@@ -358,6 +396,11 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {isGeneral && selectedPlan.hieaId && (
+                         <span className="px-3 py-1 bg-brand-primary/10 text-brand-primary text-[10px] font-black rounded-full border border-brand-primary/20">
+                            {hieas.find(h => h.id === selectedPlan.hieaId)?.name || 'هيئة مرتبطة'}
+                         </span>
+                      )}
                       <button 
                         onClick={() => setIsEditing(!isEditing)}
                         className={`p-3 rounded-xl transition-all shadow-lg ${isEditing ? 'bg-brand-primary text-brand-dark shadow-brand-primary/20' : 'bg-white/5 text-slate-400 hover:text-white'}`}
@@ -456,35 +499,39 @@ const PlanManager: React.FC<PlanManagerProps> = ({ hiea }) => {
                       </div>
                     </div>
 
-                    {/* Entity Overall standing Linkage */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center px-1">
-                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                          <Activity size={12} className="text-green-500" /> مؤشر أداء الهيئة الكلي
-                        </span>
-                        <span className="text-green-500 font-black text-lg">{hiea.progress || 0}%</span>
+                    {/* Entity Overall standing Linkage (ONLY if linked to a hiea) */}
+                    {hiea && !isGeneral && (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center px-1">
+                          <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                            <Activity size={12} className="text-green-500" /> مؤشر أداء الهيئة الكلي
+                          </span>
+                          <span className="text-green-500 font-black text-lg">{hiea.progress || 0}%</span>
+                        </div>
+                        <div className="h-2.5 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
+                          <div 
+                            className="h-full bg-green-500/80 rounded-full transition-all duration-1000"
+                            style={{ width: `${hiea.progress || 0}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-2.5 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
-                        <div 
-                          className="h-full bg-green-500/80 rounded-full transition-all duration-1000"
-                          style={{ width: `${hiea.progress || 0}%` }}
-                        />
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Strategic Alignment Note */}
-                  <div className="mt-8 p-4 bg-brand-primary/5 border border-brand-primary/10 rounded-xl flex items-start gap-4">
-                    <div className="p-2 bg-brand-primary/20 rounded-lg text-brand-primary">
-                      <TrendingUp size={20} />
+                  {hiea && !isGeneral && (
+                    <div className="mt-8 p-4 bg-brand-primary/5 border border-brand-primary/10 rounded-xl flex items-start gap-4">
+                      <div className="p-2 bg-brand-primary/20 rounded-lg text-brand-primary">
+                        <TrendingUp size={20} />
+                      </div>
+                      <div className="space-y-1">
+                        <h5 className="text-[11px] font-black uppercase text-white tracking-widest">الارتباط الإستراتيجي</h5>
+                        <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                          يتم تحديث مؤشر أداء الهيئة تلقائياً عند تحقيق أهداف هذه الخطة. نجاح الخطة يساهم بنسبة مباشرة في رفع تصنيف الهيئة وتحقيق مستهدفاتها العليا.
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <h5 className="text-[11px] font-black uppercase text-white tracking-widest">الارتباط الإستراتيجي</h5>
-                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
-                        يتم تحديث مؤشر أداء الهيئة تلقائياً عند تحقيق أهداف هذه الخطة. نجاح الخطة يساهم بنسبة مباشرة في رفع تصنيف الهيئة وتحقيق مستهدفاتها العليا.
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 

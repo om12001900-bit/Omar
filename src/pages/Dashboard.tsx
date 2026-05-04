@@ -3,6 +3,7 @@ import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, 
+  Layout,
   Target, 
   Layers, 
   Briefcase, 
@@ -26,6 +27,7 @@ import Conferences from './views/Conferences';
 import Calendar from './views/Calendar';
 import Settings from './views/Settings';
 import Analytics from './views/Analytics';
+import PlanPage from './views/PlanPage';
 
 import { Logo } from '../components/Logo';
 import { InstallPWA } from '../components/InstallPWA';
@@ -49,6 +51,7 @@ export default function Dashboard() {
     { path: '/dashboard/analytics', label: 'التمثيل البياني', icon: BarChart3 },
     { path: '/dashboard/goals', label: 'الأهداف والمستهدفات', icon: Target },
     { path: '/dashboard/hieas', label: 'الهيئات الاستراتيجية', icon: Layers },
+    { path: '/dashboard/plan', label: 'الخطة الاستراتيجية', icon: Layout },
     { path: '/dashboard/projects', label: 'المشاريع التنفيذية', icon: Briefcase },
     { path: '/dashboard/conferences', label: 'المؤتمرات والمعارض', icon: Presentation },
     { path: '/dashboard/calendar', label: 'التقويم الإستراتيجي', icon: CalendarIcon },
@@ -293,6 +296,7 @@ export default function Dashboard() {
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="goals" element={<GoalsTargets />} />
                 <Route path="hieas" element={<Hieas />} />
+                <Route path="plan" element={<PlanPage />} />
                 <Route path="projects" element={<Projects />} />
                 <Route path="conferences" element={<Conferences />} />
                 <Route path="calendar" element={<Calendar />} />

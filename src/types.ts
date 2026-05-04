@@ -125,7 +125,7 @@ export interface PlanStage {
 
 export interface Plan {
   id: string;
-  hieaId: string;
+  hieaId?: string; // Optional for general plans
   title: string;
   description: string;
   startDate: string;

@@ -16,7 +16,6 @@ import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import PerformanceTracker from '../../components/PerformanceTracker';
-import PlanManager from '../../components/PlanManager';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -35,7 +34,6 @@ export default function Hieas() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedHiea, setSelectedHiea] = useState<Hiea | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'plan'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'progress'>('name');
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; hieaId: string | null; name: string }>({
@@ -244,7 +242,6 @@ export default function Hieas() {
                         transition={{ delay: index * 0.05 }}
                         onClick={() => {
                           setSelectedHiea(hiea);
-                          setActiveTab('overview');
                           setEditContent({ 
                             laws: hiea.laws || '', 
                             procedures: hiea.procedures || '',
@@ -458,32 +455,21 @@ export default function Hieas() {
 
                   <div className="mt-12 h-px bg-gradient-to-l from-transparent via-white/5 to-transparent" />
 
-                  {/* Tab Navigation */}
-                  {!isEditing && (
-                    <div className="flex bg-[#020617] p-1.5 rounded-2xl border border-white/10 mt-8 max-w-md ml-auto">
-                      <button
-                        onClick={() => setActiveTab('overview')}
-                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                          activeTab === 'overview' ? 'bg-brand-primary text-brand-dark shadow-xl' : 'text-slate-600 hover:text-slate-400'
-                        }`}
-                      >
-                         نظرة عامة
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('plan')}
-                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                          activeTab === 'plan' ? 'bg-brand-primary text-brand-dark shadow-xl' : 'text-slate-600 hover:text-slate-400'
-                        }`}
-                      >
-                         الخطة الاستراتيجية
-                      </button>
-                    </div>
-                  )}
-                </div>
+                    {/* Tab Navigation */}
+                    {!isEditing && (
+                      <div className="flex bg-[#020617] p-1.5 rounded-2xl border border-white/10 mt-8 max-w-[200px] ml-auto">
+                        <button
+                          className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-brand-primary text-brand-dark shadow-xl"
+                        >
+                           نظرة عامة
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-                <div className="px-8 md:px-12 pb-12 space-y-12 text-right">
-                    {activeTab === 'overview' || isEditing ? (
-                      <>
+                  <div className="px-8 md:px-12 pb-12 space-y-12 text-right">
+                    {/* Hiea Content */}
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {isEditing && (
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -827,17 +813,12 @@ export default function Hieas() {
                       )}
                     </section>
                   </div>
-                </>
-              ) : (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <PlanManager hiea={selectedHiea} />
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
   </div>
 
       {/* Add Hiea Modal */}
