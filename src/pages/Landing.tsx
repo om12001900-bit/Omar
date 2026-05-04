@@ -74,10 +74,10 @@ export default function Landing() {
                   <Logo className="scale-[3]" showText={false} />
                   <div className="mt-20">
                     <div className="text-8xl font-display font-extrabold text-white mb-2 drop-shadow-[0_0_30px_rgba(74,222,128,0.3)]">
-                      {isStandalone ? "VISION" : "O.V.9"}
+                      O.V.9
                     </div>
                     <div className="text-brand-primary tracking-[0.5em] text-xl font-bold uppercase">
-                      {isStandalone ? "Quantum Tracker" : "Vision Platform"}
+                      Vision Platform
                     </div>
                   </div>
                </div>

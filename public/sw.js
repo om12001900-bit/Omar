@@ -1,8 +1,9 @@
-const CACHE_NAME = 'hieas-v1';
+const CACHE_NAME = 'ov9-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.webmanifest'
+  '/manifest.webmanifest',
+  '/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {

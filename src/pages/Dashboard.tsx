@@ -113,10 +113,10 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 md:gap-4 text-left">
           <div className="flex flex-col items-end">
             <span className="text-lg md:text-2xl font-display font-black tracking-tighter text-white leading-none bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-              {isStandalone ? "VISION STRATEGIC" : "O.V.9 CONTROL"}
+              O.V.9 CONTROL
             </span>
             <span className="text-[10px] md:text-xs text-brand-primary font-black uppercase tracking-[0.3em] mt-1">
-              {isStandalone ? "QUANTUM TRACKER" : "STRATEGIC PLATFORM"}
+              STRATEGIC PLATFORM
             </span>
           </div>
           <motion.div 

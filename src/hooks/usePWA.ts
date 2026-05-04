@@ -36,12 +36,29 @@ export function usePWA() {
     
     checkStandalone();
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    mediaQuery.addEventListener('change', checkStandalone);
+    try {
+      mediaQuery.addEventListener('change', checkStandalone);
+    } catch (e) {
+      try {
+        // Fallback for older browsers
+        mediaQuery.addListener(checkStandalone);
+      } catch (e2) {
+        console.error('PWA matchMedia listeners not supported');
+      }
+    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      mediaQuery.removeEventListener('change', checkStandalone);
+      try {
+        mediaQuery.removeEventListener('change', checkStandalone);
+      } catch (e) {
+        try {
+          mediaQuery.removeListener(checkStandalone);
+        } catch (e2) {
+          // ignore
+        }
+      }
     };
   }, []);
 
