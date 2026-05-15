@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Goal, Hiea, Project, Conference, StrategicUpdate, Budget, WishlistItem, Transaction } from '../types';
+import { Goal, Hiea, Project, Conference, StrategicUpdate, Budget, WishlistItem, Transaction, ChangelogLog } from '../types';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 export function useFinance() {
@@ -243,7 +243,7 @@ export function useVersion() {
 }
 
 export function useChangelog() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<ChangelogLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

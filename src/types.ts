@@ -208,3 +208,10 @@ export interface Budget {
   ownerId: string;
   updatedAt: FirestoreTimestamp;
 }
+
+export interface ChangelogLog {
+  id: string;
+  version: string;
+  description: string;
+  timestamp: FirestoreTimestamp;
+}

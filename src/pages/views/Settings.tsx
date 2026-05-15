@@ -35,12 +35,12 @@ export default function Settings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
-    // Check if we already bumped to 1.02 to avoid multiple increments
+    // Check if we already bumped to 1.03 to avoid multiple increments
     const checkVersionBump = async () => {
-      const hasBumped = localStorage.getItem('v1.02_bumped');
-      if (!hasBumped && version < 1.02) {
-        await incrementPlatformVersion('تحديث تقني: ترقية الإصدار إلى 1.02');
-        localStorage.setItem('v1.02_bumped', 'true');
+      const hasBumped = localStorage.getItem('v1.03_bumped');
+      if (!hasBumped && version < 1.03) {
+        await incrementPlatformVersion('تحديث واجهة الهيئات وتطوير سجل التغييرات الاستراتيجي');
+        localStorage.setItem('v1.03_bumped', 'true');
       }
     };
     checkVersionBump();
@@ -922,8 +922,12 @@ export default function Settings() {
                        <p className="text-brand-primary font-black uppercase tracking-[0.2em] text-xs">منصة المتابعة الاستراتيجية الموحدة</p>
                     </div>
 
-                    <div className="py-2 px-6 bg-brand-primary/10 border border-brand-primary/20 inline-block">
-                       <span className="text-brand-primary font-black text-sm">الإصدار {version.toFixed(2)}</span>
+                    <div className="py-2 px-6 bg-brand-primary/10 border border-brand-primary/20 inline-block relative group overflow-hidden">
+                       <div className="absolute inset-0 bg-brand-primary/5 -translate-x-full group-hover:translate-x-0 transition-transform duration-1000" />
+                       <span className="text-brand-primary font-black text-[10px] uppercase tracking-[0.2em] relative z-10 flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-brand-primary animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
+                          Strategic Release v{version.toFixed(2)}
+                       </span>
                     </div>
                   </div>
 

@@ -8,7 +8,7 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
 // Versioning Logic
-import { doc, getDoc, setDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, increment, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export async function incrementPlatformVersion(description: string = 'تحديث النظام') {
   const versionDocRef = doc(db, 'settings', 'system');

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Layers, Book, Gavel, ArrowRight, ChevronLeft, Target, Briefcase, Activity, TrendingUp, Check, Search, AlertCircle, Upload, Loader2, Link as LinkIcon, Download } from 'lucide-react';
+import { Plus, Trash2, Edit2, Layers, Book, Gavel, ArrowRight, ChevronLeft, Target, Briefcase, Activity, TrendingUp, Check, Search, AlertCircle, Upload, Loader2, Link as LinkIcon } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { 
@@ -63,17 +63,7 @@ export default function Hieas() {
 
   const [isUploading, setIsUploading] = useState(false);
 
-  React.useEffect(() => {
-    // Increment version to mark the UI adjustment
-    const markUIUpdate = async () => {
-      const hasUpdated = localStorage.getItem('hiea_ui_updated_v3');
-      if (!hasUpdated) {
-        await incrementPlatformVersion('تصغير جذري لبطاقات الهيئات لإكسابها طابعاً عصرياً ومختصراً');
-        localStorage.setItem('hiea_ui_updated_v3', 'true');
-      }
-    };
-    markUIUpdate();
-  }, []);
+  // Removed redundant version bump logic - centralized in Settings.tsx
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     const file = e.target.files?.[0];
