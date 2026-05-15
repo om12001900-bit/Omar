@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Edit2, Layers, Book, Gavel, ArrowRight, ChevronLeft, Target, Briefcase, Activity, TrendingUp, Check, Search, AlertCircle, Upload, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Plus, Trash2, Edit2, Layers, Book, Gavel, ArrowRight, ChevronLeft, Target, Briefcase, Activity, TrendingUp, Check, Search, AlertCircle, Upload, Loader2, Link as LinkIcon, Download } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { 
@@ -12,7 +12,7 @@ import {
   doc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, incrementPlatformVersion } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import PerformanceTracker from '../../components/PerformanceTracker';
@@ -63,6 +63,18 @@ export default function Hieas() {
 
   const [isUploading, setIsUploading] = useState(false);
 
+  React.useEffect(() => {
+    // Increment version to mark the UI adjustment
+    const markUIUpdate = async () => {
+      const hasUpdated = localStorage.getItem('hiea_ui_updated_v3');
+      if (!hasUpdated) {
+        await incrementPlatformVersion('تصغير جذري لبطاقات الهيئات لإكسابها طابعاً عصرياً ومختصراً');
+        localStorage.setItem('hiea_ui_updated_v3', 'true');
+      }
+    };
+    markUIUpdate();
+  }, []);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -105,6 +117,7 @@ export default function Hieas() {
         ownerId: user.uid,
         createdAt: serverTimestamp(),
       });
+      await incrementPlatformVersion();
       setModalOpen(false);
       setFormData({ name: '', color: '#4ade80', goalIds: [], logoUrl: '', achievements: '', description: '' });
     } catch (err) {
@@ -120,6 +133,7 @@ export default function Hieas() {
         ...editContent,
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
       setIsEditing(false);
       setSelectedHiea({ ...selectedHiea, ...editContent });
     } catch (err) {
@@ -132,6 +146,7 @@ export default function Hieas() {
     if (!deleteConfirm.hieaId) return;
     try {
       await deleteDoc(doc(db, 'hieas', deleteConfirm.hieaId));
+      await incrementPlatformVersion();
       if (selectedHiea?.id === deleteConfirm.hieaId) setSelectedHiea(null);
       setDeleteConfirm({ isOpen: false, hieaId: null, name: '' });
     } catch (err) {
@@ -254,108 +269,65 @@ export default function Hieas() {
                           });
                           setIsEditing(false);
                         }}
-                        className="group relative h-[360px] cursor-pointer overflow-hidden border border-white/5 bg-[#0a0a0b] hover:border-white/20 transition-all duration-500 flex flex-col rounded-[2rem] shadow-2xl"
+                        className="group relative h-[125px] cursor-pointer overflow-hidden border border-white/5 bg-[#0a0a0b] hover:border-brand-primary/20 transition-all duration-300 flex flex-col rounded-xl shadow-lg"
                       >
                         {/* Status Light */}
                         <div 
-                          className="absolute top-0 right-0 h-1.5 w-full opacity-60 group-hover:opacity-100 transition-opacity duration-500 z-30"
+                          className="absolute top-0 right-0 h-1 w-full opacity-60 group-hover:opacity-100 transition-opacity duration-500 z-30"
                           style={{ backgroundColor: hiea.color || '#4ade80' }}
                         />
 
                         {/* Card Content */}
-                        <div className="p-6 md:p-8 flex flex-col h-full relative z-10">
-                          <div className="flex justify-between items-start mb-6 flex-row-reverse">
+                        <div className="p-3 flex flex-col h-full relative z-10">
+                          <div className="flex justify-between items-center mb-1 flex-row-reverse">
                             <div 
-                              className="w-16 h-16 bg-[#020617] border border-white/10 rounded-2xl flex items-center justify-center relative overflow-hidden transition-all group-hover:scale-110 group-hover:border-brand-primary/50 group-hover:shadow-[0_0_20px_rgba(74,222,128,0.2)]"
+                              className="w-8 h-8 bg-[#020617] border border-white/10 rounded-lg flex items-center justify-center relative overflow-hidden transition-all group-hover:scale-105 group-hover:border-brand-primary/50"
                               style={{ color: hiea.color || '#4ade80' }}
                             >
                               {hiea.logoUrl ? (
-                                <img src={hiea.logoUrl} alt={hiea.name} className="w-full h-full object-contain p-2" />
+                                <img src={hiea.logoUrl} alt={hiea.name} className="w-full h-full object-contain p-1" />
                               ) : (
-                                <Layers size={24} />
+                                <Layers size={14} />
                               )}
                             </div>
                             <div className="text-right">
-                               <p className="text-[9px] font-black uppercase text-slate-600 tracking-[0.2em] mb-1">كفاءة الأداء</p>
-                               <p className="text-2xl font-display font-black text-white">
-                                 {relatedProjects.length > 0 
-                                   ? Math.round(relatedProjects.reduce((acc, p) => acc + (p.progress || 0), 0) / relatedProjects.length)
-                                   : hiea.progress || 0}%
+                               <p className="text-[12px] font-display font-black text-white group-hover:text-brand-primary transition-colors truncate max-w-[120px]">
+                                 {hiea.name}
                                </p>
                             </div>
                           </div>
 
-                          <div className="flex-1 space-y-3">
-                            <h3 className="text-xl font-display font-black text-white leading-tight group-hover:text-brand-primary transition-colors text-right tracking-tight">
-                              {hiea.name}
-                            </h3>
-                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed text-right font-medium">
-                              {hiea.description || 'لا يوجد وصف استراتيجي مسجل لهذا الكيان حالياً.'}
-                            </p>
+                        <div className="flex-1 flex items-center justify-between flex-row-reverse">
+                             <p className="text-[14px] font-mono font-black text-slate-500">
+                                 {relatedProjects.length > 0 
+                                   ? Math.round(relatedProjects.reduce((acc, p) => acc + (p.progress || 0), 0) / relatedProjects.length)
+                                   : hiea.progress || 0}%
+                             </p>
+                             <p className="text-[9px] text-slate-700 line-clamp-1 max-w-[100px] text-right font-medium italic">
+                               {hiea.description || 'بدون وصف'}
+                             </p>
                           </div>
 
-                          {/* Stats Row */}
-                          <div className="flex items-center justify-end gap-4 mb-6 flex-row-reverse">
-                             <div className="flex flex-col items-end">
-                                <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1">أهداف</span>
-                                <span className="text-xs font-black text-slate-300">{relatedGoals.length}</span>
-                             </div>
-                             <div className="w-px h-4 bg-white/5" />
-                             <div className="flex flex-col items-end">
-                                <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1">مشاريع</span>
-                                <span className="text-xs font-black text-slate-300">{relatedProjects.length}</span>
-                             </div>
-                          </div>
-
-                          {/* Efficiency Indicator UI */}
-                          <div className="pt-1 relative">
-                             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                                <motion.div 
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${relatedProjects.length > 0 
-                                    ? Math.round(relatedProjects.reduce((acc, p) => acc + (p.progress || 0), 0) / relatedProjects.length)
-                                    : hiea.progress || 0}%` }}
-                                  transition={{ duration: 1.5, ease: "circOut" }}
-                                  className="h-full rounded-full transition-all duration-1000"
-                                  style={{ 
-                                    backgroundColor: hiea.color || '#4ade80'
-                                  }}
-                                />
-                             </div>
+                          {/* Minimal Stats Row */}
+                          <div className="flex items-center justify-between mt-auto pt-1.5 border-t border-white/5">
+                            <div className="flex gap-2 text-[7px] font-black uppercase text-slate-800">
+                               <span>{relatedGoals.length} أهداف</span>
+                               <span>{relatedProjects.length} مشاريع</span>
+                            </div>
+                            
+                            <div className="flex gap-1 flex-row-reverse">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirm({ isOpen: true, hieaId: hiea.id, name: hiea.name });
+                                }}
+                                className="p-1 hover:bg-red-500/10 text-red-500/10 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 size={10} />
+                              </button>
+                            </div>
                           </div>
                         </div>
-
-                        {/* HOVER OVERLAY: Details Reveal */}
-                        <motion.div 
-                          className="absolute inset-0 bg-[#020617]/98 z-40 p-10 flex flex-col justify-between translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.23,1,0.32,1]"
-                        >
-                           <div className="space-y-8">
-                              <div className="flex items-center justify-between border-b border-white/5 pb-6 flex-row-reverse">
-                                 <h4 className="text-xs font-black uppercase tracking-[0.3em] text-brand-primary">لوحة التحكم</h4>
-                                 <ArrowRight size={18} className="text-slate-700 rtl-flip" />
-                              </div>
-                              
-                              <div className="space-y-8">
-                                 <div className="space-y-4">
-                                    <p className="text-[10px] font-black uppercase text-slate-700 mb-4 text-right tracking-widest">تنسيق الأهداف</p>
-                                    <div className="space-y-3">
-                                       {relatedGoals.slice(0, 3).map(g => (
-                                          <div key={g.id} className="text-xs font-bold text-slate-400 truncate flex items-center gap-3 justify-end">
-                                             <span className="truncate">{g.name}</span>
-                                             <div className="w-1.5 h-1.5 shrink-0 bg-brand-primary/40 rounded-full" />
-                                          </div>
-                                       ))}
-                                       {relatedGoals.length > 3 && <p className="text-[10px] text-brand-primary font-black uppercase tracking-widest text-right mt-2">+{relatedGoals.length - 3} MORE</p>}
-                                       {relatedGoals.length === 0 && <p className="text-xs text-slate-800 italic text-right">No active goals</p>}
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
-
-                           <div className="bg-brand-primary text-brand-dark p-6 rounded-[1.5rem] text-center text-xs font-black uppercase tracking-[0.4em] shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                              إدارة الكيان 
-                           </div>
-                        </motion.div>
                       </motion.div>
                     );
                   })}

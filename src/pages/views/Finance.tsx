@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useFinance } from '../../hooks/useData';
 import { useAuth } from '../../contexts/AuthContext';
-import { db } from '../../lib/firebase';
+import { db, incrementPlatformVersion } from '../../lib/firebase';
 import { WishlistItem } from '../../types';
 import { 
   collection, 
@@ -65,6 +65,7 @@ export default function Finance() {
         ownerId: user.uid,
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
     } catch (err) {
       console.error(err);
     }
@@ -120,6 +121,7 @@ export default function Finance() {
         await setDoc(newBudgetRef, fullNewBudget);
       }
 
+      await incrementPlatformVersion();
       setShowAddTransaction(false);
       setTransactionForm({ type: 'income', amount: '', description: '', category: 'cash' });
     } catch (err) {
@@ -166,6 +168,7 @@ export default function Finance() {
         });
       }
 
+      await incrementPlatformVersion();
       setShowAddWishlist(false);
       setWishlistForm({ name: '', price: '', status: 'desire' });
     } catch (err) {
@@ -197,6 +200,17 @@ export default function Finance() {
         cash: (budget.cash || 0) - item.price,
         updatedAt: serverTimestamp()
       });
+
+      await incrementPlatformVersion();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteWishlist = async (itemId: string) => {
+    try {
+      await deleteDoc(doc(db, 'wishlist', itemId));
+      await incrementPlatformVersion();
     } catch (err) {
       console.error(err);
     }
@@ -420,7 +434,7 @@ export default function Finance() {
                         {!item.isBought && (
                           <div className="flex gap-2">
                              <button 
-                                onClick={() => deleteDoc(doc(db, 'wishlist', item.id))}
+                                onClick={() => handleDeleteWishlist(item.id)}
                                 className="p-2 hover:bg-red-500/10 text-red-500/50 hover:text-red-500 transition-colors"
                               >
                                 <Trash2 size={16} />

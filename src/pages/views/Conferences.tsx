@@ -27,7 +27,7 @@ import {
   doc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, incrementPlatformVersion } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 
@@ -106,6 +106,7 @@ export default function Conferences() {
         ownerId: user.uid,
         createdAt: serverTimestamp(),
       });
+      await incrementPlatformVersion();
       setModalOpen(false);
       resetForm();
     } catch (err) {
@@ -120,6 +121,7 @@ export default function Conferences() {
         ...editData,
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
       setIsEditing(false);
       setSelectedConf({ ...selectedConf, ...editData });
     } catch (err) {
@@ -131,6 +133,7 @@ export default function Conferences() {
     if (!deleteConfirm.confId) return;
     try {
       await deleteDoc(doc(db, 'conferences', deleteConfirm.confId));
+      await incrementPlatformVersion();
       if (selectedConf?.id === deleteConfirm.confId) setSelectedConf(null);
       setDeleteConfirm({ isOpen: false, confId: null, name: '' });
     } catch (err) {

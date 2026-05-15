@@ -17,7 +17,7 @@ import {
   serverTimestamp,
   getDocFromServer
 } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { auth, db, incrementPlatformVersion } from '../lib/firebase';
 import { UserProfile } from '../types';
 
 enum OperationType {
@@ -109,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
             try {
               await setDoc(profileRef, newProfile);
+              await incrementPlatformVersion();
             } catch (error) {
               handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}`);
             }
@@ -136,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await updateDoc(profileRef, data);
       setProfile(prev => prev ? { ...prev, ...data } : null);
+      await incrementPlatformVersion();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
     }

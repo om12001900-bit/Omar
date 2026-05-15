@@ -5,6 +5,7 @@ import {
   ChevronRight, 
   ChevronLeft, 
   Plus, 
+  Download,
   X, 
   Clock, 
   Trash2,
@@ -58,7 +59,7 @@ import {
   serverTimestamp,
   orderBy
 } from 'firebase/firestore';
-import { db, auth } from '../../lib/firebase';
+import { db, auth, incrementPlatformVersion } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
 import { useHieas, useConferences, useProjects } from '../../hooks/useData';
@@ -500,6 +501,7 @@ export default function Calendar() {
 
       setIsModalOpen(false);
       resetForm();
+      await incrementPlatformVersion();
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'calendar_events');
     }
@@ -513,6 +515,7 @@ export default function Calendar() {
         date: format(newDate, 'yyyy-MM-dd'),
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `calendar_events/${event.id}`);
     }
@@ -522,6 +525,7 @@ export default function Calendar() {
     if (!confirm('هل أنت متأكد من حذف هذه الفعالية؟')) return;
     try {
       await deleteDoc(doc(db, 'calendar_events', eventId));
+      await incrementPlatformVersion();
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `calendar_events/${eventId}`);
     }
@@ -552,6 +556,7 @@ export default function Calendar() {
         isCompleted: !event.isCompleted,
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `calendar_events/${event.id}`);
     }
@@ -608,7 +613,36 @@ export default function Calendar() {
             />
           </div>
 
-          <div className="flex items-center bg-white/5 border border-white/10 p-1">
+          <div className="flex items-center gap-2">
+            <button
+               onClick={() => {
+                 const csvRows = [
+                   ['Title', 'Date', 'Time', 'Type', 'Priority', 'Source', 'Description'],
+                   ...filteredEvents.map(e => [
+                     e.title,
+                     e.date,
+                     e.startTime,
+                     e.type,
+                     e.priority,
+                     e.isExternal ? (e.source || 'Other') : 'Internal',
+                     e.description || ''
+                   ])
+                 ];
+                 const csvContent = "\uFEFF" + csvRows.map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(",")).join("\n");
+                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                 const link = document.createElement("a");
+                 link.href = URL.createObjectURL(blob);
+                 link.download = `Calendar_Export_${new Date().toISOString().split('T')[0]}.csv`;
+                 link.click();
+               }}
+               className="p-3 bg-white/5 border border-white/10 text-slate-500 hover:text-brand-primary hover:border-brand-primary/30 transition-all flex items-center gap-2"
+               title="تصدير التقويم (CSV)"
+             >
+               <Download size={14} />
+               <span className="text-[9px] font-black uppercase tracking-widest hidden md:inline">تصدير</span>
+             </button>
+
+            <div className="flex items-center bg-white/5 border border-white/10 p-1">
             <button 
               onClick={() => setViewMode('grid')}
               className={`p-2 transition-all ${viewMode === 'grid' ? 'bg-brand-primary text-brand-dark' : 'text-slate-500 hover:text-slate-300'}`}
@@ -638,6 +672,7 @@ export default function Calendar() {
               <ListIcon size={16} />
             </button>
           </div>
+        </div>
 
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}

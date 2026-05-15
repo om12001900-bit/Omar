@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
-import { useHieas, useProjects, useGoals, useConferences } from '../../hooks/useData';
-import { db } from '../../lib/firebase';
+import { useHieas, useProjects, useGoals, useConferences, useVersion, useChangelog } from '../../hooks/useData';
+import { db, incrementPlatformVersion } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { 
   collection, 
@@ -25,12 +25,26 @@ export default function Settings() {
   const { projects } = useProjects();
   const { goals } = useGoals();
   const { conferences } = useConferences();
+  const { version } = useVersion();
+  const { logs } = useChangelog();
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    // Check if we already bumped to 1.02 to avoid multiple increments
+    const checkVersionBump = async () => {
+      const hasBumped = localStorage.getItem('v1.02_bumped');
+      if (!hasBumped && version < 1.02) {
+        await incrementPlatformVersion('تحديث تقني: ترقية الإصدار إلى 1.02');
+        localStorage.setItem('v1.02_bumped', 'true');
+      }
+    };
+    checkVersionBump();
+  }, [version]);
 
   const [formData, setFormData] = useState({
     displayName: profile?.displayName || 'مستخدم تجريبي',
@@ -117,7 +131,7 @@ export default function Settings() {
       conferences,
       timestamp: new Date().toISOString(),
       system: 'O.V.9 Quantum Tracker',
-      version: '1.0.0'
+      version: version.toFixed(2)
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -241,6 +255,7 @@ export default function Settings() {
         }
 
         await batch.commit();
+        await incrementPlatformVersion();
         setSuccessMessage('تم استيراد كافة البيانات وبناء الروابط بنجاح.');
       } catch (error) {
         console.error("Import error:", error);
@@ -255,6 +270,31 @@ export default function Settings() {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleDeleteAllData = async () => {
+    if (!user) return;
+    if (!confirm('سيتم حذف كافة البيانات الاستراتيجية بشكل نهائي. هل أنت متأكد؟')) return;
+
+    setIsSaving(true);
+    setSuccessMessage('جاري تصفية النظام ومسح كافة السجلات...');
+    try {
+      const batch = writeBatch(db);
+      
+      hieas.forEach(h => batch.delete(doc(db, 'hieas', h.id)));
+      projects.forEach(p => batch.delete(doc(db, 'projects', p.id)));
+      goals.forEach(g => batch.delete(doc(db, 'goals', g.id)));
+      conferences.forEach(c => batch.delete(doc(db, 'conferences', c.id)));
+      
+      await batch.commit();
+      await incrementPlatformVersion();
+      setSuccessMessage('تم تصفية النظام بالكامل بنجاح.');
+    } catch (error) {
+      console.error(error);
+      setErrorMessage('فشل في حذف البيانات. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -848,7 +888,13 @@ export default function Settings() {
                     <Trash2 className="text-red-500 opacity-50 transition-all mr-auto" size={32} />
                     <h4 className="text-sm font-black text-white">حذف كافة البيانات</h4>
                     <p className="text-[10px] text-slate-500 leading-relaxed font-bold italic">هذا الإجراء سيقوم بمسح كافة السجلات الاستراتيجية من النظام ولا يمكن التراجع عنه.</p>
-                    <button className="w-full py-3 bg-red-500/10 text-red-500 font-bold text-xs uppercase hover:bg-red-500 hover:text-white transition-all">حذف النظام بالكامل</button>
+                    <button 
+                      onClick={handleDeleteAllData}
+                      disabled={isSaving}
+                      className="w-full py-3 bg-red-500/10 text-red-500 font-bold text-xs uppercase hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                    >
+                      {isSaving ? 'جاري المسح...' : 'حذف النظام بالكامل'}
+                    </button>
                   </div>
                   
                   <div className="p-6 border border-brand-primary/10 bg-brand-primary/[0.01]">
@@ -877,7 +923,7 @@ export default function Settings() {
                     </div>
 
                     <div className="py-2 px-6 bg-brand-primary/10 border border-brand-primary/20 inline-block">
-                       <span className="text-brand-primary font-black text-sm">الإصدار 1.0.0</span>
+                       <span className="text-brand-primary font-black text-sm">الإصدار {version.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -897,6 +943,26 @@ export default function Settings() {
                       <div className="p-6 bg-white/5 border border-white/5 space-y-2">
                         <h5 className="text-xs font-black text-brand-primary uppercase tracking-widest leading-loose">التحديثات المستمرة</h5>
                         <p className="text-[11px] text-slate-500 leading-relaxed">تخضع المنصة لدورات تطوير مستقرة، حيث يتم توثيق كل تغيير وترقية بدقة عالية لضمان استمرارية الكفاءة.</p>
+                      </div>
+                    </div>
+
+                    {/* Changelog Section */}
+                    <div className="space-y-6 pt-6">
+                      <h4 className="text-sm font-black text-slate-100 uppercase tracking-widest border-b border-white/5 pb-2 inline-block ml-auto">سجل التغييرات الأخير</h4>
+                      <div className="space-y-3">
+                        {logs.map((log) => (
+                          <div key={log.id} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5">
+                            <div className="flex items-center gap-4">
+                              <span className="text-[10px] font-black text-brand-primary px-2 py-1 bg-brand-primary/10 border border-brand-primary/20">
+                                v{parseFloat(log.version).toFixed(2)}
+                              </span>
+                              <span className="text-xs text-slate-300 font-medium">{log.description}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-600 font-mono">
+                              {log.timestamp?.toDate ? new Intl.DateTimeFormat('ar-EG', { dateStyle: 'short', timeStyle: 'short' }).format(log.timestamp.toDate()) : '...'}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
@@ -937,7 +1003,7 @@ export default function Settings() {
            </div>
            <div className="space-y-1">
              <p className="text-[10px] text-slate-600 font-black uppercase">Version Control</p>
-             <p className="text-xs font-bold text-slate-300">v1.0.0</p>
+             <p className="text-xs font-bold text-slate-300">v{version.toFixed(2)}</p>
            </div>
            <div className="space-y-1">
              <p className="text-[10px] text-slate-600 font-black uppercase">Last Revision</p>

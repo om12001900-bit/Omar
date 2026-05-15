@@ -33,7 +33,7 @@ import {
   serverTimestamp,
   arrayUnion 
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, incrementPlatformVersion } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import PerformanceTracker from '../../components/PerformanceTracker';
@@ -203,6 +203,7 @@ export default function Projects() {
         ownerId: user.uid,
         createdAt: serverTimestamp(),
       });
+      await incrementPlatformVersion();
       setModalOpen(false);
       resetForm();
     } catch (err) {
@@ -233,6 +234,7 @@ export default function Projects() {
         updatedAt: serverTimestamp()
       };
       await updateDoc(doc(db, 'projects', selectedProject.id), updatedData);
+      await incrementPlatformVersion();
       setIsEditing(false);
       setSelectedProject({ ...selectedProject, ...updatedData } as Project);
 
@@ -279,6 +281,7 @@ export default function Projects() {
         ownerId: user.uid,
         createdAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
       setUpdatePrompt(null);
     } catch (err) {
       console.error(err);
@@ -313,6 +316,7 @@ export default function Projects() {
       }
 
       await updateDoc(doc(db, 'projects', selectedProject.id), updatePayload);
+      await incrementPlatformVersion();
       
       // Auto-Sync logic for HIEAs and Goals if progress is positive
       if (performanceType === 'positive' && val > selectedProject.progress) {
@@ -367,6 +371,7 @@ export default function Projects() {
         subGoals: newSubGoals,
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
       setSelectedProject({ ...selectedProject, subGoals: newSubGoals });
     } catch (err) {
       console.error(err);
@@ -388,6 +393,7 @@ export default function Projects() {
         subGoals: newSubGoals,
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
       setSelectedProject({ ...selectedProject, subGoals: newSubGoals });
     } catch (err) {
       console.error(err);
@@ -403,6 +409,7 @@ export default function Projects() {
         subGoals: newSubGoals,
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
       setSelectedProject({ ...selectedProject, subGoals: newSubGoals });
     } catch (err) {
       console.error(err);
@@ -414,6 +421,7 @@ export default function Projects() {
     if (!deleteConfirm.projectId) return;
     try {
       await deleteDoc(doc(db, 'projects', deleteConfirm.projectId));
+      await incrementPlatformVersion();
       if (selectedProject?.id === deleteConfirm.projectId) setSelectedProject(null);
       setDeleteConfirm({ isOpen: false, projectId: null, projectName: '' });
     } catch (err) {

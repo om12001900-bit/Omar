@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { 
   collection, 
+  doc, 
   query, 
   where, 
   onSnapshot,
-  orderBy
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -221,4 +223,45 @@ export function useStrategicUpdates() {
   }, [user]);
 
   return { updates, loading };
+}
+
+export function useVersion() {
+  const [version, setVersion] = useState<number>(1.00);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'system'), (snapshot) => {
+      if (snapshot.exists()) {
+        setVersion(snapshot.data().version);
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  return { version, loading };
+}
+
+export function useChangelog() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'settings', 'system', 'changelog'),
+      orderBy('timestamp', 'desc'),
+      limit(10)
+    );
+    const unsub = onSnapshot(q, (snapshot) => {
+      const logData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setLogs(logData);
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  return { logs, loading };
 }

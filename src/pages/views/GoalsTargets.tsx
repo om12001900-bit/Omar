@@ -11,7 +11,7 @@ import {
   doc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, incrementPlatformVersion } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/Modal';
 import PerformanceTracker from '../../components/PerformanceTracker';
@@ -102,6 +102,7 @@ export default function GoalsTargets() {
         progress: 0,
         createdAt: serverTimestamp(),
       });
+      await incrementPlatformVersion();
       setModalOpen(false);
       resetForm();
     } catch (err) {
@@ -121,6 +122,7 @@ export default function GoalsTargets() {
         ...editData,
         updatedAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
       setIsEditing(false);
       setSelectedGoal({ ...selectedGoal, ...editData });
 
@@ -167,6 +169,7 @@ export default function GoalsTargets() {
         ownerId: user.uid,
         createdAt: serverTimestamp()
       });
+      await incrementPlatformVersion();
       setUpdatePrompt(null);
     } catch (err) {
       console.error(err);
@@ -180,6 +183,7 @@ export default function GoalsTargets() {
     if (!selectedGoal || isEditing) return;
     try {
       await updateDoc(doc(db, 'goals', selectedGoal.id), { progress: val, updatedAt: serverTimestamp() });
+      await incrementPlatformVersion();
       setSelectedGoal({ ...selectedGoal, progress: val });
     } catch (err) {
       console.error(err);
@@ -190,6 +194,7 @@ export default function GoalsTargets() {
     if (!deleteConfirm.goalId) return;
     try {
       await deleteDoc(doc(db, 'goals', deleteConfirm.goalId));
+      await incrementPlatformVersion();
       if (selectedGoal?.id === deleteConfirm.goalId) setSelectedGoal(null);
       setDeleteConfirm({ isOpen: false, goalId: null, name: '' });
     } catch (err) {
