@@ -11,7 +11,8 @@ const defaultSettings: UserSettings = {
   themeColor: '#4ade80',
   darkMode: true,
   fontSize: 'medium',
-  borderRadius: 'none'
+  borderRadius: 'medium',
+  defaultCalendarView: 'grid'
 };
 
 const UIContext = createContext<UIContextType | undefined>(undefined);

@@ -254,61 +254,67 @@ export default function Hieas() {
                           });
                           setIsEditing(false);
                         }}
-                        className="group relative h-[420px] cursor-pointer overflow-hidden border border-white/5 bg-[#0a0a0b] hover:border-white/20 transition-all duration-500 flex flex-col rounded-[2.5rem] shadow-2xl"
+                        className="group relative h-[360px] cursor-pointer overflow-hidden border border-white/5 bg-[#0a0a0b] hover:border-white/20 transition-all duration-500 flex flex-col rounded-[2rem] shadow-2xl"
                       >
                         {/* Status Light */}
                         <div 
-                          className="absolute top-0 right-0 h-2 w-full opacity-60 group-hover:opacity-100 transition-opacity duration-500 z-30"
+                          className="absolute top-0 right-0 h-1.5 w-full opacity-60 group-hover:opacity-100 transition-opacity duration-500 z-30"
                           style={{ backgroundColor: hiea.color || '#4ade80' }}
                         />
 
                         {/* Card Content */}
-                        <div className="p-8 md:p-10 flex flex-col h-full relative z-10">
-                          <div className="flex justify-between items-start mb-8 flex-row-reverse">
+                        <div className="p-6 md:p-8 flex flex-col h-full relative z-10">
+                          <div className="flex justify-between items-start mb-6 flex-row-reverse">
                             <div 
-                              className="w-20 h-20 bg-[#020617] border border-white/10 rounded-3xl flex items-center justify-center relative overflow-hidden transition-all group-hover:scale-110 group-hover:border-brand-primary/50 group-hover:shadow-[0_0_30px_rgba(74,222,128,0.2)]"
+                              className="w-16 h-16 bg-[#020617] border border-white/10 rounded-2xl flex items-center justify-center relative overflow-hidden transition-all group-hover:scale-110 group-hover:border-brand-primary/50 group-hover:shadow-[0_0_20px_rgba(74,222,128,0.2)]"
                               style={{ color: hiea.color || '#4ade80' }}
                             >
                               {hiea.logoUrl ? (
-                                <img src={hiea.logoUrl} alt={hiea.name} className="w-full h-full object-contain p-3" />
+                                <img src={hiea.logoUrl} alt={hiea.name} className="w-full h-full object-contain p-2" />
                               ) : (
-                                <Layers size={32} />
+                                <Layers size={24} />
                               )}
                             </div>
                             <div className="text-right">
-                               <p className="text-[10px] font-black uppercase text-slate-600 tracking-[0.2em] mb-1">الإنجاز</p>
-                               <p className="text-3xl font-display font-black text-white">{hiea.progress || 0}%</p>
+                               <p className="text-[9px] font-black uppercase text-slate-600 tracking-[0.2em] mb-1">كفاءة الأداء</p>
+                               <p className="text-2xl font-display font-black text-white">
+                                 {relatedProjects.length > 0 
+                                   ? Math.round(relatedProjects.reduce((acc, p) => acc + (p.progress || 0), 0) / relatedProjects.length)
+                                   : hiea.progress || 0}%
+                               </p>
                             </div>
                           </div>
 
-                          <div className="flex-1 space-y-4">
-                            <h3 className="text-2xl font-display font-black text-white leading-tight group-hover:text-brand-primary transition-colors text-right tracking-tight">
+                          <div className="flex-1 space-y-3">
+                            <h3 className="text-xl font-display font-black text-white leading-tight group-hover:text-brand-primary transition-colors text-right tracking-tight">
                               {hiea.name}
                             </h3>
-                            <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed text-right font-medium">
-                              {hiea.description || 'لا يوجد وصف استراتيجي مسجل لهذا الكيان حالياً في قاعدة البيانات المركزية.'}
+                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed text-right font-medium">
+                              {hiea.description || 'لا يوجد وصف استراتيجي مسجل لهذا الكيان حالياً.'}
                             </p>
                           </div>
 
                           {/* Stats Row */}
-                          <div className="flex items-center justify-end gap-6 mb-8 flex-row-reverse">
+                          <div className="flex items-center justify-end gap-4 mb-6 flex-row-reverse">
                              <div className="flex flex-col items-end">
-                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest mb-1">أهداف</span>
-                                <span className="text-sm font-black text-slate-300">{relatedGoals.length}</span>
+                                <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1">أهداف</span>
+                                <span className="text-xs font-black text-slate-300">{relatedGoals.length}</span>
                              </div>
-                             <div className="w-px h-6 bg-white/5" />
+                             <div className="w-px h-4 bg-white/5" />
                              <div className="flex flex-col items-end">
-                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest mb-1">مشاريع</span>
-                                <span className="text-sm font-black text-slate-300">{relatedProjects.length}</span>
+                                <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1">مشاريع</span>
+                                <span className="text-xs font-black text-slate-300">{relatedProjects.length}</span>
                              </div>
                           </div>
 
-                          {/* Progress Line */}
-                          <div className="pt-2 relative">
-                             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                          {/* Efficiency Indicator UI */}
+                          <div className="pt-1 relative">
+                             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
                                 <motion.div 
                                   initial={{ width: 0 }}
-                                  animate={{ width: `${hiea.progress || 0}%` }}
+                                  animate={{ width: `${relatedProjects.length > 0 
+                                    ? Math.round(relatedProjects.reduce((acc, p) => acc + (p.progress || 0), 0) / relatedProjects.length)
+                                    : hiea.progress || 0}%` }}
                                   transition={{ duration: 1.5, ease: "circOut" }}
                                   className="h-full rounded-full transition-all duration-1000"
                                   style={{ 
@@ -508,16 +514,16 @@ export default function Hieas() {
                           
                           <div className="space-y-4">
                               <div className="flex justify-between items-center px-2 flex-row-reverse">
-                                 <label className="text-xs font-black uppercase text-slate-500 tracking-widest">نسبة الإنجاز الفعلية</label>
+                                 <label className="text-xs font-black uppercase text-slate-500 tracking-widest">نسبة كفاءة الأداء</label>
                                  <span className="text-xl font-display font-black text-brand-primary">{editContent.progress}%</span>
                               </div>
                               <input 
-                                type="range"
-                                min="0" max="100"
-                                value={editContent.progress}
-                                onChange={(e) => setEditContent({ ...editContent, progress: parseInt(e.target.value) })}
-                                className="w-full h-2 bg-white/10 rounded-none appearance-none outline-none accent-brand-primary cursor-pointer"
-                              />
+                                  type="range"
+                                  min="0" max="100"
+                                  value={editContent.progress}
+                                  onChange={(e) => setEditContent({ ...editContent, progress: parseInt(e.target.value) })}
+                                  className="w-full h-2 bg-white/10 rounded-none appearance-none outline-none accent-brand-primary cursor-pointer"
+                                />
                           </div>
                         </div>
 

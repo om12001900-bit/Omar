@@ -25,13 +25,20 @@ interface PerformanceTrackerProps {
   collectionName: 'projects' | 'hieas' | 'goals';
   logs?: PerformanceLog[];
   accentColor?: string;
+  // Metadata for cascading updates
+  hieaIds?: string[];
+  goalId?: string;
+  currentProgress?: number;
 }
 
 export default function PerformanceTracker({ 
   entityId, 
   collectionName, 
   logs = [], 
-  accentColor = '#2dd4bf' 
+  accentColor = '#2dd4bf',
+  hieaIds = [],
+  goalId = '',
+  currentProgress = 0
 }: PerformanceTrackerProps) {
   const { user } = useAuth();
   const [isAdding, setIsAdding] = useState(false);
@@ -43,13 +50,12 @@ export default function PerformanceTracker({
     note: '',
     date: new Date().toISOString().split('T')[0],
     isCumulative: false,
-    impact: 'positive' as 'positive' | 'negative'
+    impact: 'positive' as 'positive' | 'negative',
+    isArrow: false
   });
 
   const logsTotal = logs.reduce((sum, log) => {
-    // If we mix types, we need to be careful. 
-    // If they are all stored as relative deltas (calculated from cumulative input), we just sum.
-    return sum + log.value;
+    return sum + (log.type === 'arrow' ? 0 : log.value);
   }, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,7 +65,9 @@ export default function PerformanceTracker({
     try {
       let valueToSave = Number(formData.value);
       
-      if (formData.isCumulative) {
+      if (formData.isArrow) {
+        valueToSave = formData.impact === 'positive' ? 5 : -5; // Arrows give +/- 5% progress boost
+      } else if (formData.isCumulative) {
         // Calculate the delta: newTotal - currentTotal
         valueToSave = valueToSave - logsTotal;
       } else {
@@ -70,20 +78,57 @@ export default function PerformanceTracker({
       const newLog: Partial<PerformanceLog> = {
         id: Math.random().toString(36).substr(2, 9),
         value: valueToSave,
-        type: formData.isCumulative ? 'cumulative' : 'relative',
-        impact: formData.isCumulative 
+        type: formData.isArrow ? 'arrow' : (formData.isCumulative ? 'cumulative' : 'relative'),
+        impact: (formData.isCumulative || formData.isArrow)
           ? (valueToSave >= 0 ? 'positive' : 'negative')
           : formData.impact,
+        indicator: formData.isArrow ? (formData.impact === 'positive' ? 'positive' : 'negative') : undefined,
         note: formData.note,
         date: formData.date,
         recordedBy: user.displayName || user.email || 'مستخدم غير معروف',
         recordedAt: new Date().toISOString()
       };
 
-      await updateDoc(doc(db, collectionName, entityId), {
+      const updatePayload: Record<string, unknown> = {
         performanceLogs: arrayUnion(newLog),
-        updatedAt: serverTimestamp()
-      });
+        updatedAt: serverTimestamp(),
+      };
+
+      if (formData.isArrow) {
+        // Update progress directly for arrows
+        const newProgress = Math.max(0, Math.min(100, currentProgress + valueToSave));
+        updatePayload.progress = newProgress;
+
+        // CASCADING PROGRESS LOGIC
+        if (collectionName === 'projects' && formData.impact === 'positive') {
+          // Increase linked goal progress by 2%
+          if (goalId) {
+             const goalRef = doc(db, 'goals', goalId);
+             // We don't have current goal progress easily here, so we'll use a transaction or assume a slight boost
+             // For now, simple updateDoc with field increment if available or just update progress if possible
+             // Firestore increment is safer
+             const { increment } = await import('firebase/firestore');
+             await updateDoc(goalRef, {
+               progress: increment(2),
+               updatedAt: serverTimestamp()
+             });
+          }
+
+          // Increase linked HIEAs progress by 1% each
+          for (const hId of hieaIds) {
+            const hieaRef = doc(db, 'hieas', hId);
+            const { increment } = await import('firebase/firestore');
+            await updateDoc(hieaRef, {
+              progress: increment(1),
+              updatedAt: serverTimestamp()
+            });
+          }
+        }
+      } else {
+        updatePayload.kpiCurrent = formData.isCumulative ? Number(formData.value) : (logsTotal + valueToSave);
+      }
+
+      await updateDoc(doc(db, collectionName, entityId), updatePayload);
 
       setIsAdding(false);
       setFormData({ 
@@ -91,7 +136,8 @@ export default function PerformanceTracker({
         note: '', 
         date: new Date().toISOString().split('T')[0], 
         isCumulative: false,
-        impact: 'positive'
+        impact: 'positive',
+        isArrow: false
       });
     } catch (err) {
       console.error(err);
@@ -104,6 +150,7 @@ export default function PerformanceTracker({
     try {
       await updateDoc(doc(db, collectionName, entityId), {
         performanceLogs: arrayRemove(log),
+        kpiCurrent: logsTotal - log.value,
         updatedAt: serverTimestamp()
       });
       setDeletingId(null);
@@ -192,70 +239,87 @@ export default function PerformanceTracker({
             </button>
 
             <form onSubmit={handleSubmit} className="space-y-6 pt-2">
-              <div className="flex gap-4 p-1.5 bg-[#020617] rounded-xl border border-white/5 mb-6">
+              <div className="flex gap-2 p-1.5 bg-[#020617] rounded-xl border border-white/5 mb-6">
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, isCumulative: false, value: 0 })}
+                  onClick={() => setFormData({ ...formData, isCumulative: false, isArrow: false, value: 0 })}
                   className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                    !formData.isCumulative ? 'bg-brand-primary text-brand-dark shadow-lg shadow-brand-primary/10' : 'text-slate-500 hover:text-slate-300'
+                    !formData.isCumulative && !formData.isArrow ? 'bg-brand-primary text-brand-dark shadow-lg shadow-brand-primary/10' : 'text-slate-500 hover:text-slate-300'
                   }`}
                 >
-                  رصد نسبي (+/-)
+                  كشف (أرقام)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, isCumulative: true, value: logsTotal })}
+                  onClick={() => setFormData({ ...formData, isCumulative: true, isArrow: false, value: logsTotal })}
                   className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                     formData.isCumulative ? 'bg-brand-primary text-brand-dark shadow-lg shadow-brand-primary/10' : 'text-slate-500 hover:text-slate-300'
                   }`}
                 >
-                  مقياس تراكمي (إجمالي)
+                  تراكمي
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, isArrow: true, isCumulative: false, value: 5, impact: 'positive' })}
+                  className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                    formData.isArrow ? 'bg-brand-primary text-brand-dark shadow-lg shadow-brand-primary/10' : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  الأسهم (مؤشر)
                 </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <label className="block text-[10px] font-black uppercase text-slate-600 tracking-widest px-1">
-                    {formData.isCumulative ? 'القيمة التراكمية الإجمالية' : 'قيمة التغيير'}
+                    {formData.isArrow ? 'طبيعة المؤشر (سهم التقدم)' : formData.isCumulative ? 'القيمة التراكمية الإجمالية' : 'قيمة التغيير'}
                   </label>
                   
-                  {!formData.isCumulative && (
+                  {(!formData.isCumulative || formData.isArrow) && (
                     <div className="flex gap-2 p-1 bg-[#020617] rounded-lg border border-white/5 mb-3">
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, impact: 'positive' })}
-                        className={`flex-1 py-1.5 rounded text-[9px] font-black uppercase transition-all ${
+                        onClick={() => setFormData({ ...formData, impact: 'positive', value: formData.isArrow ? 5 : formData.value })}
+                        className={`flex-1 py-2 rounded-lg text-xs font-black uppercase transition-all flex items-center justify-center gap-2 ${
                           formData.impact === 'positive' ? 'bg-green-500 text-white' : 'text-slate-500'
                         }`}
                       >
-                        إيجابي (+)
+                        <TrendingUp size={14} />
+                        إيجابي (صعود)
                       </button>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, impact: 'negative' })}
-                        className={`flex-1 py-1.5 rounded text-[9px] font-black uppercase transition-all ${
+                        onClick={() => setFormData({ ...formData, impact: 'negative', value: formData.isArrow ? 5 : formData.value })}
+                        className={`flex-1 py-2 rounded-lg text-xs font-black uppercase transition-all flex items-center justify-center gap-2 ${
                           formData.impact === 'negative' ? 'bg-red-500 text-white' : 'text-slate-500'
                         }`}
                       >
-                        سلبي (-)
+                        <TrendingDown size={14} />
+                        سلبي (هبوط)
                       </button>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-4 bg-[#020617] border border-white/10 rounded-xl p-4">
-                    <input 
-                      type="number"
-                      value={formData.value}
-                      onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
-                      className="flex-1 bg-transparent border-none outline-none text-white font-black text-lg text-center"
-                      autoFocus
-                    />
-                    {!formData.isCumulative && (
-                      <div className={`w-12 text-center font-black text-lg ${formData.impact === 'positive' ? 'text-green-500' : 'text-red-500'}`}>
-                        {formData.impact === 'positive' ? `+${formData.value}` : `-${formData.value}`}
-                      </div>
-                    )}
-                  </div>
+                  {!formData.isArrow && (
+                    <div className="flex items-center gap-4 bg-[#020617] border border-white/10 rounded-xl p-4">
+                      <input 
+                        type="number"
+                        value={formData.value}
+                        onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
+                        className="flex-1 bg-transparent border-none outline-none text-white font-black text-lg text-center"
+                        autoFocus
+                      />
+                    </div>
+                  )}
+                  
+                  {formData.isArrow && (
+                    <div className={`p-6 rounded-2xl border-2 flex flex-col items-center justify-center gap-3 transition-all ${
+                      formData.impact === 'positive' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'
+                    }`}>
+                       {formData.impact === 'positive' ? <TrendingUp size={40} /> : <TrendingDown size={40} />}
+                       <span className="text-sm font-black uppercase tracking-widest">{formData.impact === 'positive' ? 'سهم صعود (+5%)' : 'سهم هبوط (-5%)'}</span>
+                    </div>
+                  )}
                   {!formData.isCumulative && (
                     <div className="flex justify-center text-[10px] font-bold px-2">
                        <span className={formData.impact === 'positive' ? 'text-green-500/80' : 'text-red-500/80 uppercase'}>

@@ -3,7 +3,6 @@ import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, 
-  Layout,
   Target, 
   Layers, 
   Briefcase, 
@@ -14,10 +13,11 @@ import {
   Presentation,
   Calendar as CalendarIcon,
   Settings as SettingsIcon,
-  BarChart3
+  BarChart3,
+  Wallet
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useGoals, useHieas, useProjects, usePlans } from '../hooks/useData';
+import { useGoals, useHieas, useProjects } from '../hooks/useData';
 
 import Overview from './views/Overview';
 import GoalsTargets from './views/GoalsTargets';
@@ -27,7 +27,7 @@ import Conferences from './views/Conferences';
 import Calendar from './views/Calendar';
 import Settings from './views/Settings';
 import Analytics from './views/Analytics';
-import PlanPage from './views/PlanPage';
+import Finance from './views/Finance';
 
 import { Logo } from '../components/Logo';
 import { InstallPWA } from '../components/InstallPWA';
@@ -43,13 +43,11 @@ export default function Dashboard() {
   const { goals } = useGoals();
   const { hieas } = useHieas();
   const { projects } = useProjects();
-  const { plans } = usePlans();
 
   const allProgressValues = [
     ...(goals || []).map(g => g.progress || 0),
     ...(hieas || []).map(h => h.progress || 0),
-    ...(projects || []).map(p => p.progress || 0),
-    ...(plans || []).map(pl => pl.progress || 0)
+    ...(projects || []).map(p => p.progress || 0)
   ].filter(v => !isNaN(v));
 
   const globalProgress = allProgressValues.length > 0 
@@ -67,7 +65,7 @@ export default function Dashboard() {
     { path: '/dashboard/analytics', label: 'التمثيل البياني', icon: BarChart3 },
     { path: '/dashboard/goals', label: 'الأهداف والمستهدفات', icon: Target },
     { path: '/dashboard/hieas', label: 'الهيئات الاستراتيجية', icon: Layers },
-    { path: '/dashboard/plan', label: 'الخطة الاستراتيجية', icon: Layout },
+    { path: '/dashboard/finance', label: 'النظام المالي', icon: Wallet },
     { path: '/dashboard/projects', label: 'المشاريع التنفيذية', icon: Briefcase },
     { path: '/dashboard/conferences', label: 'المؤتمرات والمعارض', icon: Presentation },
     { path: '/dashboard/calendar', label: 'التقويم الإستراتيجي', icon: CalendarIcon },
@@ -76,13 +74,23 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col h-screen bg-brand-dark text-white overflow-hidden" dir="rtl">
+      {/* Skip to main content for accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[200] focus:top-4 focus:right-4 focus:px-6 focus:py-3 focus:bg-brand-primary focus:text-brand-dark focus:font-black focus:rounded-xl focus:shadow-2xl"
+      >
+        انتقل إلى المحتوى الرئيسي
+      </a>
+
       {/* 1. Header Area (Strategic Control Center) */}
       <header className="h-16 md:h-20 border-b border-white/5 flex items-center justify-between px-4 md:px-10 shrink-0 bg-[#020617]/80 backdrop-blur-xl relative z-50">
         {/* Left Side: Mobile Menu Toggle & User Profile */}
         <div className="flex items-center gap-3 md:gap-4">
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-400"
+            className="md:hidden w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/50"
+            aria-label={isMobileMenuOpen ? "إغلاق القائمة" : "فتح القائمة"}
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -109,15 +117,19 @@ export default function Dashboard() {
             
             <button 
               onClick={() => confirm('هل تريد تسجيل الخروج؟') && signOut()}
-              className="w-9 h-9 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all text-slate-500"
+              className="w-9 h-9 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
               title="تسجيل الخروج"
+              aria-label="تسجيل الخروج"
             >
               <LogOut size={18} />
             </button>
             
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative w-9 h-9 flex items-center justify-center hover:bg-white/5 rounded-lg transition-all text-slate-500 group"
+              className="relative w-9 h-9 flex items-center justify-center hover:bg-white/5 rounded-lg transition-all text-slate-500 group focus:outline-none focus:ring-2 focus:ring-brand-primary/50"
+              aria-label="التنبيهات"
+              aria-haspopup="true"
+              aria-expanded={showNotifications}
             >
               <Bell size={18} className="group-hover:text-brand-primary transition-colors" />
               <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-brand-primary rounded-full ring-2 ring-[#020617]" />
@@ -129,15 +141,24 @@ export default function Dashboard() {
             {/* Global Progress Indicator */}
             <Link 
               to="/dashboard"
-              className="hidden lg:flex flex-col items-end mr-4 group px-4 py-1.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-brand-primary/5 hover:border-brand-primary/20 transition-all"
+              className="flex flex-col items-end mr-2 md:mr-4 group px-3 md:px-5 py-1.5 md:py-2 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-brand-primary/5 hover:border-brand-primary/20 transition-all"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-[14px] font-display font-black text-white leading-none">
-                  {globalProgress}%
-                </span>
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-primary shadow-[0_0_8px_rgba(45,212,191,0.5)] animate-pulse" />
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex flex-col items-end">
+                  <span className="text-[12px] md:text-[16px] font-display font-black text-white leading-none">
+                    {globalProgress}%
+                  </span>
+                </div>
+                <div className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-brand-primary shadow-[0_0_12px_rgba(45,212,191,0.6)] animate-pulse" />
               </div>
-              <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mt-1 group-hover:text-brand-primary transition-colors">Global Progress</span>
+              <div className="w-16 md:w-24 h-1 bg-white/5 rounded-full mt-2 overflow-hidden hidden sm:block">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${globalProgress}%` }}
+                  className="h-full bg-gradient-to-r from-brand-primary to-brand-secondary"
+                />
+              </div>
+              <span className="text-[7px] md:text-[8px] text-slate-500 font-black uppercase tracking-widest mt-1.5 group-hover:text-brand-primary transition-colors">Strategic Achievement</span>
             </Link>
 
             <div className="flex flex-col items-end">
@@ -285,22 +306,47 @@ export default function Dashboard() {
               >
                 <Link
                   to={item.path}
-                  className={`flex items-center gap-2 px-5 py-2 transition-all relative group rounded-xl border whitespace-nowrap ${
-                    isActive 
-                      ? 'text-brand-primary bg-brand-primary/10 border-brand-primary/20' 
-                      : 'text-slate-500 hover:text-slate-100 hover:bg-white/5 border-transparent'
-                  }`}
+                  className="block relative group"
                 >
-                  <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-brand-primary' : 'text-slate-500 group-hover:text-slate-300'} />
-                  <span className={`text-[11px] font-black uppercase tracking-widest ${isActive ? 'text-white' : 'text-slate-500'}`}>{item.label}</span>
-                  
-                  {isActive && (
-                    <motion.div 
-                      layoutId="nav-indicator"
-                      className="absolute inset-0 border border-brand-primary/30 rounded-xl"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex items-center gap-2 px-5 py-2 transition-all relative rounded-xl border whitespace-nowrap overflow-hidden ${
+                      isActive 
+                        ? 'text-brand-primary bg-brand-primary/10 border-brand-primary/20 shadow-[0_0_20px_rgba(45,212,191,0.1)]' 
+                        : 'text-slate-500 hover:text-slate-100 hover:bg-white/5 border-transparent'
+                    }`}
+                  >
+                    <item.icon 
+                      size={16} 
+                      strokeWidth={isActive ? 2.5 : 2} 
+                      className={`relative z-10 ${isActive ? 'text-brand-primary' : 'text-slate-500 group-hover:text-slate-300 transition-colors'}`} 
                     />
-                  )}
+                    <span className={`relative z-10 text-[11px] font-black uppercase tracking-widest ${isActive ? 'text-white' : 'text-slate-500 transition-colors group-hover:text-slate-200'}`}>
+                      {item.label}
+                    </span>
+                    
+                    {isActive && (
+                      <>
+                        <motion.div 
+                          layoutId="nav-indicator"
+                          className="absolute inset-0 border border-brand-primary/30 rounded-xl"
+                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        />
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0.05, 0.1, 0.05] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          className="absolute inset-0 bg-brand-primary rounded-xl"
+                        />
+                      </>
+                    )}
+
+                    {/* Subtle hover glow for inactive items */}
+                    {!isActive && (
+                      <div className="absolute inset-0 bg-brand-primary/0 group-hover:bg-brand-primary/5 transition-colors" />
+                    )}
+                  </motion.div>
                 </Link>
               </motion.div>
             );
@@ -309,7 +355,7 @@ export default function Dashboard() {
       </nav>
 
       {/* 3. Viewport Content (Purple Zone in user's logic) */}
-      <main className="flex-1 overflow-y-auto relative scroll-smooth bg-[#020617]/50 border-t border-purple-500/5 pb-20 md:pb-0">
+      <main id="main-content" className="flex-1 overflow-y-auto relative scroll-smooth bg-[#020617]/50 border-t border-purple-500/5 pb-20 md:pb-0">
         <div className="min-h-full">
           <AnimatePresence mode="wait">
             <motion.div
@@ -325,7 +371,7 @@ export default function Dashboard() {
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="goals" element={<GoalsTargets />} />
                 <Route path="hieas" element={<Hieas />} />
-                <Route path="plan" element={<PlanPage />} />
+                <Route path="finance" element={<Finance />} />
                 <Route path="projects" element={<Projects />} />
                 <Route path="conferences" element={<Conferences />} />
                 <Route path="calendar" element={<Calendar />} />

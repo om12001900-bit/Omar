@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, Edit2, Calendar, Target, TrendingUp, Layers, CheckCircle2, ChevronLeft, Check, Target as TargetIcon, Search, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Edit2, Calendar, Target, TrendingUp, Layers, CheckCircle2, ChevronLeft, Check, Target as TargetIcon, Search, ChevronDown, Activity, Award } from 'lucide-react';
 import { useGoals, useHieas, useProjects } from '../../hooks/useData';
+import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { 
   collection, 
   addDoc, 
@@ -25,6 +26,16 @@ export default function GoalsTargets() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [updatePrompt, setUpdatePrompt] = useState<{
+    show: boolean;
+    title: string;
+    content: string;
+    type: 'milestone' | 'project' | 'goal' | 'general';
+    entityId: string;
+    entityName: string;
+    icon?: string;
+  } | null>(null);
+  const [isPostingUpdate, setIsPostingUpdate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [formData, setFormData] = useState({
@@ -35,6 +46,10 @@ export default function GoalsTargets() {
     hieaId: '',
     projectId: '',
     category: GoalCategory.OV9,
+    kpiTitle: '',
+    kpiTarget: 0,
+    kpiCurrent: 0,
+    kpiUnit: '',
   });
 
   const [editData, setEditData] = useState<Partial<Goal>>({
@@ -46,6 +61,10 @@ export default function GoalsTargets() {
     projectId: '',
     category: GoalCategory.OV9,
     progress: 0,
+    kpiTitle: '',
+    kpiTarget: 0,
+    kpiCurrent: 0,
+    kpiUnit: '',
     milestones: [] as Milestone[],
   });
 
@@ -64,6 +83,10 @@ export default function GoalsTargets() {
       hieaId: '',
       projectId: '',
       category: GoalCategory.OV9,
+      kpiTitle: '',
+      kpiTarget: 0,
+      kpiCurrent: 0,
+      kpiUnit: '',
     });
   };
 
@@ -89,14 +112,67 @@ export default function GoalsTargets() {
   const handleUpdate = async () => {
     if (!selectedGoal) return;
     try {
+      // Check for newly completed milestones
+      const newlyCompletedMilestones = (editData.milestones || []).filter(m => 
+        m.completed && !(selectedGoal.milestones || []).find(sm => sm.id === m.id)?.completed
+      );
+
       await updateDoc(doc(db, 'goals', selectedGoal.id), {
         ...editData,
         updatedAt: serverTimestamp()
       });
       setIsEditing(false);
       setSelectedGoal({ ...selectedGoal, ...editData });
+
+      // Trigger prompt if milestone completed or goal reached 100%
+      if (newlyCompletedMilestones.length > 0) {
+        const lastM = newlyCompletedMilestones[newlyCompletedMilestones.length - 1];
+        setUpdatePrompt({
+          show: true,
+          title: lastM.title,
+          content: `تم إنجاز محطة رئيسية: "${lastM.title}" ضمن الهدف الاستراتيجي ${selectedGoal.name}. يعكس هذا التحول التزاماً عميقاً بمسارات الرؤية الموضوعة.`,
+          type: 'milestone',
+          entityId: selectedGoal.id,
+          entityName: selectedGoal.name,
+          icon: 'Target'
+        });
+      } else if ((editData.progress || 0) === 100 && (selectedGoal.progress || 0) < 100) {
+        setUpdatePrompt({
+          show: true,
+          title: `تحقيق الهدف الاستراتيجي: ${selectedGoal.name}`,
+          content: `اكتمل تحقيق الهدف الاستراتيجي "${selectedGoal.name}" بنسبة 100%. يسجل هذا الإنجاز كعلامة فارقة في التطور المؤسسي والتحول الاستراتيجي.`,
+          type: 'goal',
+          entityId: selectedGoal.id,
+          entityName: selectedGoal.name,
+          icon: 'TrendingUp'
+        });
+      }
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.UPDATE, `goals/${selectedGoal.id}`);
+    }
+  };
+
+  const handlePostStrategicUpdate = async () => {
+    if (!updatePrompt || !user) return;
+    setIsPostingUpdate(true);
+    try {
+      await addDoc(collection(db, 'strategic_updates'), {
+        title: updatePrompt.title,
+        content: updatePrompt.content,
+        type: updatePrompt.type,
+        entityId: updatePrompt.entityId,
+        entityName: updatePrompt.entityName,
+        icon: updatePrompt.icon || 'Activity',
+        ownerId: user.uid,
+        createdAt: serverTimestamp()
+      });
+      setUpdatePrompt(null);
+    } catch (err) {
+      console.error(err);
+      handleFirestoreError(err, OperationType.CREATE, 'strategic_updates');
+    } finally {
+      setIsPostingUpdate(false);
     }
   };
 
@@ -159,7 +235,8 @@ export default function GoalsTargets() {
             resetForm();
             setModalOpen(true);
           }}
-          className="w-full md:w-auto bg-brand-primary text-brand-dark font-black px-8 py-4 rounded-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-brand-primary/20 transition-all group shrink-0"
+          className="w-full md:w-auto bg-brand-primary text-brand-dark font-black px-8 py-4 rounded-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-brand-primary/20 transition-all group shrink-0 focus:outline-none focus:ring-2 focus:ring-white/50"
+          aria-label="إضافة هدف استراتيجي جديد"
         >
           <div className="w-10 h-10 rounded-xl bg-brand-dark/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
             <Plus size={20} strokeWidth={3} />
@@ -189,24 +266,34 @@ export default function GoalsTargets() {
 
                 <div className="mb-6 px-1">
                    <div className="flex items-center bg-[#0a0a0b] border border-white/5 rounded-2xl px-5 py-3 hover:border-brand-primary/30 transition-all focus-within:ring-4 focus-within:ring-brand-primary/5">
-                      <Search size={16} className="text-slate-700" />
+                      <Search size={16} className="text-slate-700" aria-hidden="true" />
                       <input 
                         type="text"
                         placeholder="بحث في المستهدفات..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-transparent border-none outline-none text-sm text-slate-300 placeholder:text-slate-700 text-right w-full px-3"
+                        className="bg-transparent border-none outline-none text-sm text-slate-300 placeholder:text-slate-700 text-right w-full px-3 focus:outline-none"
+                        aria-label="بحث في المستهدفات"
                       />
                    </div>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto space-y-4 px-1 custom-scrollbar pb-10 relative">
+                <div className="flex-1 overflow-y-auto space-y-4 px-1 custom-scrollbar pb-10 relative" role="list" aria-label="قائمة الأهداف الاستراتيجية">
                   {goals
                     .filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .map((goal) => (
                     <motion.div
                       layout
                       key={goal.id}
+                      role="listitem"
+                      tabIndex={0}
+                      aria-label={`الهدف: ${goal.name}. نسبة الإنجاز: ${goal.progress}%`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setSelectedGoal(goal);
+                          // ... other states
+                        }
+                      }}
                       onClick={() => {
                         setSelectedGoal(goal);
                         setEditData({
@@ -218,11 +305,15 @@ export default function GoalsTargets() {
                           projectId: goal.projectId || '',
                           category: goal.category,
                           progress: goal.progress || 0,
+                          kpiTitle: goal.kpiTitle || '',
+                          kpiTarget: goal.kpiTarget || 0,
+                          kpiCurrent: goal.kpiCurrent || 0,
+                          kpiUnit: goal.kpiUnit || '',
                           milestones: goal.milestones || [],
                         });
                         setIsEditing(false);
                       }}
-                      className={`w-full text-right p-5 rounded-2xl transition-all border relative overflow-hidden group cursor-pointer ${
+                      className={`w-full text-right p-5 rounded-2xl transition-all border relative overflow-hidden group cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary/40 ${
                         selectedGoal?.id === goal.id 
                         ? 'bg-brand-primary/10 border-brand-primary/30 shadow-2xl' 
                         : 'bg-[#0a0a0b] border-white/5 hover:border-white/10 grayscale-[0.3] hover:grayscale-0'
@@ -233,13 +324,14 @@ export default function GoalsTargets() {
                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
                               goal.type === GoalType.OBJECTIVE ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20' : 'bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20'
                             }`}>
-                              {goal.type === GoalType.OBJECTIVE ? <Target size={18} /> : <TrendingUp size={18} />}
+                               {goal.type === GoalType.OBJECTIVE ? <Target size={18} aria-hidden="true" /> : <TrendingUp size={18} aria-hidden="true" />}
                             </div>
                             {goal.hieaId && (
                               <div 
                                 className="w-1.5 h-6 rounded-full" 
                                 style={{ backgroundColor: hieas.find(h => h.id === goal.hieaId)?.color || '#4ade80' }}
                                 title={hieas.find(h => h.id === goal.hieaId)?.name}
+                                aria-label={`تصنيف: ${hieas.find(h => h.id === goal.hieaId)?.name}`}
                               />
                             )}
                          </div>
@@ -250,7 +342,7 @@ export default function GoalsTargets() {
                       
                       <h4 className="text-base font-bold text-slate-100 line-clamp-2 mb-4 relative z-10 leading-snug">{goal.name}</h4>
                       
-                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden relative z-10">
+                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden relative z-10" role="progressbar" aria-valuenow={goal.progress || 0} aria-valuemin={0} aria-valuemax={100}>
                         <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${goal.progress || 0}%` }}
@@ -263,8 +355,9 @@ export default function GoalsTargets() {
 
                       <button 
                         onClick={(e) => openDeleteConfirm(e, goal)}
-                        className="absolute left-4 bottom-14 p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl border border-red-500/10 transition-all opacity-0 group-hover:opacity-100 z-20"
+                        className="absolute left-4 bottom-14 p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl border border-red-500/10 transition-all opacity-0 group-hover:opacity-100 z-20 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500/50"
                         title="حذف العنصر"
+                        aria-label={`حذف الهدف ${goal.name}`}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -349,7 +442,83 @@ export default function GoalsTargets() {
                             </span>
                             <span className="text-xs text-slate-600 font-bold">•</span>
                             <span className="text-xs text-slate-600 font-black uppercase tracking-widest">{selectedGoal.category} Path</span>
+                            {selectedGoal.kpiTitle && (
+                              <>
+                                <span className="text-xs text-slate-600 font-bold">•</span>
+                                <span className="text-xs text-brand-primary font-black uppercase tracking-widest">{selectedGoal.kpiTitle}</span>
+                              </>
+                            )}
                           </div>
+
+                          {isEditing && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 bg-white/[0.02] p-6 border border-white/5">
+                              <div className="space-y-2 col-span-2">
+                                <label className="text-[10px] text-slate-600 block px-2 uppercase font-black tracking-widest">عنوان المؤشر (KPI)</label>
+                                <input 
+                                  type="text" 
+                                  value={editData.kpiTitle}
+                                  onChange={(e) => setEditData({ ...editData, kpiTitle: e.target.value })}
+                                  className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-sm text-slate-300 outline-none focus:border-brand-primary font-bold"
+                                  placeholder="مثل: نسبة الإنجاز الربعية..."
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[10px] text-slate-600 block px-2 uppercase font-black tracking-widest">المستهدف الرقمي</label>
+                                <input 
+                                  type="number" 
+                                  value={editData.kpiTarget}
+                                  onChange={(e) => setEditData({ ...editData, kpiTarget: Number(e.target.value) })}
+                                  className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-sm text-slate-300 outline-none focus:border-brand-primary font-bold"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[10px] text-slate-600 block px-2 uppercase font-black tracking-widest">الحالي</label>
+                                <input 
+                                  type="number" 
+                                  value={editData.kpiCurrent}
+                                  onChange={(e) => setEditData({ ...editData, kpiCurrent: Number(e.target.value) })}
+                                  className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-sm text-slate-300 outline-none focus:border-brand-primary font-bold"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[10px] text-slate-600 block px-2 uppercase font-black tracking-widest">الوحدة</label>
+                                <input 
+                                  type="text" 
+                                  value={editData.kpiUnit}
+                                  onChange={(e) => setEditData({ ...editData, kpiUnit: e.target.value })}
+                                  className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-sm text-slate-300 outline-none focus:border-brand-primary font-bold"
+                                  placeholder="مثل: %, ريال, ساعة..."
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {!isEditing && selectedGoal.kpiTitle && (
+                            <div className="mt-6 flex flex-wrap gap-8 items-center bg-white/[0.02] p-6 border border-white/5">
+                               <div className="flex flex-col gap-1">
+                                  <span className="text-[9px] text-slate-600 font-black uppercase tracking-widest">المستهدف</span>
+                                  <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-display font-black text-white">{selectedGoal.kpiTarget}</span>
+                                    <span className="text-xs text-slate-500 font-bold">{selectedGoal.kpiUnit}</span>
+                                  </div>
+                               </div>
+                               <div className="flex flex-col gap-1">
+                                  <span className="text-[9px] text-slate-600 font-black uppercase tracking-widest">المحقق حالياً</span>
+                                  <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-display font-black text-brand-primary">{selectedGoal.kpiCurrent}</span>
+                                    <span className="text-xs text-slate-500 font-bold">{selectedGoal.kpiUnit}</span>
+                                  </div>
+                               </div>
+                               <div className="flex flex-col gap-1">
+                                  <span className="text-[9px] text-slate-600 font-black uppercase tracking-widest">نسبة التحقيق</span>
+                                  <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-display font-black text-brand-secondary">
+                                      {selectedGoal.kpiTarget ? Math.round((selectedGoal.kpiCurrent || 0) / selectedGoal.kpiTarget * 100) : 0}%
+                                    </span>
+                                  </div>
+                               </div>
+                            </div>
+                          )}
                           
                           {/* Dedicated Linear Progress Bar for immediate visual feedback */}
                           {!isEditing && (
@@ -844,6 +1013,49 @@ export default function GoalsTargets() {
                     ))}
                   </div>
                 </div>
+
+                <div className="space-y-6 pt-6 border-t border-white/5">
+                  <label className="block text-xs font-black uppercase text-slate-600 mb-2 tracking-[0.2em] px-4">تتبع مؤشرات الأداء (KPIs)</label>
+                  <div className="space-y-4">
+                    <input 
+                      type="text" 
+                      value={formData.kpiTitle}
+                      onChange={(e) => setFormData({ ...formData, kpiTitle: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-none py-4 px-8 outline-none focus:border-brand-primary text-sm text-slate-300 font-bold"
+                      placeholder="عنوان المؤشر (مثال: نسبة المبيعات المستهدفة)"
+                    />
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] text-slate-700 block px-2 uppercase font-black tracking-widest">المستهدف</label>
+                        <input 
+                          type="number" 
+                          value={formData.kpiTarget}
+                          onChange={(e) => setFormData({ ...formData, kpiTarget: Number(e.target.value) })}
+                          className="w-full bg-white/5 border border-white/10 rounded-none py-3 px-4 outline-none focus:border-brand-primary text-sm text-brand-primary font-bold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] text-slate-700 block px-2 uppercase font-black tracking-widest">الحالي</label>
+                        <input 
+                          type="number" 
+                          value={formData.kpiCurrent}
+                          onChange={(e) => setFormData({ ...formData, kpiCurrent: Number(e.target.value) })}
+                          className="w-full bg-white/5 border border-white/10 rounded-none py-3 px-4 outline-none focus:border-brand-primary text-sm text-brand-secondary font-bold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] text-slate-700 block px-2 uppercase font-black tracking-widest">الوحدة</label>
+                        <input 
+                          type="text" 
+                          value={formData.kpiUnit}
+                          onChange={(e) => setFormData({ ...formData, kpiUnit: e.target.value })}
+                          className="w-full bg-white/5 border border-white/10 rounded-none py-3 px-4 outline-none focus:border-brand-primary text-sm text-slate-300 font-bold"
+                          placeholder="%, ريال..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
              </div>
 
           <button 
@@ -859,35 +1071,95 @@ export default function GoalsTargets() {
       <Modal 
         isOpen={deleteConfirm.isOpen} 
         onClose={() => setDeleteConfirm({ isOpen: false, goalId: null, name: '' })}
-        title="تأكيد حذف الهدف الاستراتيجي"
+        title="تأكيد الحذف النهائي"
       >
-        <div className="text-right space-y-6">
-          <div className="flex items-center gap-4 p-4 bg-red-500/10 border border-red-500/20 rounded-none">
-            <Target className="text-red-500 shrink-0" size={24} />
-            <div className="space-y-1">
-              <p className="text-sm text-slate-300 font-bold">حذف الهدف: {deleteConfirm.name}</p>
-              <p className="text-[11px] text-slate-500 font-medium whitespace-pre-wrap">
-                هل أنت متأكد من رغبتك في حذف هذا الهدف الاستراتيجي؟ سيتم إزالة كافة البيانات والمستهدفات المرتبطة به نهائياً.
-              </p>
-            </div>
+        <div className="text-right space-y-8 p-2">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Trash2 size={40} className="text-red-500" />
           </div>
           
-          <div className="flex flex-col md:flex-row gap-4 pt-4">
+          <div className="space-y-3 text-center">
+            <h3 className="text-xl font-display font-black text-white">هل أنت متأكد من الحذف؟</h3>
+            <p className="text-slate-400 font-medium">سيتم حذف الهدف <span className="text-red-400 font-black">"{deleteConfirm.name}"</span> وكافة البيانات المرتبطة به نهائياً من النظام.</p>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-6">
             <button 
               onClick={handleDelete}
-              className="flex-1 bg-red-600 text-white font-black py-4 hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+              className="w-full bg-red-600 text-white font-black py-5 rounded-none hover:bg-red-700 transition-all shadow-xl shadow-red-600/20 text-sm uppercase tracking-widest"
             >
-              نعم، أحذف الهدف نهائياً
+              نعم، أحذف الهدف (Yes, Delete)
             </button>
             <button 
               onClick={() => setDeleteConfirm({ isOpen: false, goalId: null, name: '' })}
-              className="flex-1 bg-white/5 text-slate-400 font-black py-4 hover:bg-white/10 border border-white/5 transition-all"
+              className="w-full bg-white/5 text-slate-400 font-black py-5 rounded-none hover:bg-white/10 border border-white/5 transition-all text-sm uppercase tracking-widest"
             >
-              إلغاء العملية
+              إلغاء العملية (Cancel)
             </button>
           </div>
         </div>
       </Modal>
+
+      {/* Strategic Update Prompt */}
+      <AnimatePresence>
+        {updatePrompt?.show && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-brand-dark/90 backdrop-blur-xl">
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="w-full max-w-lg bg-[#0a0a0b] border border-brand-primary/20 shadow-[0_0_50px_rgba(45,212,191,0.1)] p-8 md:p-12 relative overflow-hidden"
+             >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 blur-3xl -translate-y-16 -translate-x-16" />
+                
+                <div className="relative z-10 flex flex-col items-center text-center">
+                   <div className="w-20 h-20 bg-brand-primary/10 flex items-center justify-center text-brand-primary border border-brand-primary/20 mb-8 shadow-lg">
+                      <Award size={40} />
+                   </div>
+                   
+                   <h3 className="text-2xl font-display font-black text-white mb-4 leading-tight text-center">مشاركة إنجاز استراتيجي؟</h3>
+                   <p className="text-slate-400 font-bold leading-relaxed mb-10 text-sm text-center">
+                      لقد حققت تقدماً ملموساً في "{updatePrompt.title}". هل ترغب في مشاركة هذا التحديث الاستراتيجي في لوحة النشاط العامة لتعزيز الشفافية التنفيذية؟
+                   </p>
+                   
+                   <div className="w-full space-y-4">
+                      <button 
+                        disabled={isPostingUpdate}
+                        onClick={handlePostStrategicUpdate}
+                        className="w-full bg-brand-primary text-brand-dark font-black uppercase tracking-[0.2em] py-5 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-primary/20"
+                      >
+                         {isPostingUpdate ? (
+                           <div className="w-5 h-5 border-2 border-brand-dark/30 border-t-brand-dark animate-spin" />
+                         ) : (
+                           <>
+                             <Activity size={18} />
+                             نشر التحديث الآن
+                           </>
+                         )}
+                      </button>
+                      <button 
+                        disabled={isPostingUpdate}
+                        onClick={() => setUpdatePrompt(null)}
+                        className="w-full bg-white/5 text-slate-500 font-black uppercase tracking-[0.2em] py-5 hover:bg-white/10 transition-all border border-white/5"
+                      >
+                         تجاهل والمتابعة
+                      </button>
+                   </div>
+                   
+                   <div className="mt-8 pt-8 border-t border-white/5 w-full">
+                      <div className="flex items-center gap-3 justify-center mb-4 text-center">
+                         <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
+                         <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Protocol Strategic Announcement</span>
+                      </div>
+                      <div className="p-4 bg-white/[0.02] border border-white/5 text-right">
+                         <p className="text-[10px] text-slate-500 font-bold leading-relaxed italic">"{updatePrompt.content}"</p>
+                      </div>
+                   </div>
+                </div>
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

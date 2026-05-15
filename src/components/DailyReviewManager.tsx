@@ -16,23 +16,21 @@ import {
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { useGoals, useHieas, usePlans, useProjects } from '../hooks/useData';
-import { Plan } from '../types';
+import { useGoals, useHieas, useProjects } from '../hooks/useData';
 
 export default function DailyReviewManager() {
   const { profile, user } = useAuth();
   const { goals } = useGoals();
   const { hieas } = useHieas();
-  const { plans } = usePlans();
   const { projects } = useProjects();
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'goal' | 'hiea' | 'plan_goal' | 'project'>('goal');
+  const [activeTab, setActiveTab] = useState<'goal' | 'hiea' | 'project'>('goal');
 
   const dailyItems = profile?.dailyReviewItems || [];
 
-  const handleToggleItem = async (itemId: string, type: 'goal' | 'plan_goal' | 'hiea' | 'project', extra: Record<string, string> = {}) => {
+  const handleToggleItem = async (itemId: string, type: 'goal' | 'hiea' | 'project', extra: Record<string, string> = {}) => {
     if (!user) return;
     
     const existingIndex = dailyItems.findIndex(i => i.itemId === itemId && i.type === type);
@@ -78,28 +76,11 @@ export default function DailyReviewManager() {
     }
   };
 
-  const planGoalItems: { id: string; title: string; planId: string; stageId: string; planTitle: string; stageTitle: string }[] = [];
-  (plans || []).forEach((p: Plan) => {
-    (p.stages || []).forEach(s => {
-      (s.goals || []).forEach(sg => {
-        planGoalItems.push({ 
-          id: sg.id,
-          title: sg.text,
-          planId: p.id,
-          stageId: s.id,
-          planTitle: p.title,
-          stageTitle: s.title
-        });
-      });
-    });
-  });
-
   const filteredGoals = goals.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredHieas = hieas.filter(h => h.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredProjects = projects.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredPlanGoals = planGoalItems.filter(pg => pg.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const renderItem = (id: string, title: string, type: 'goal' | 'hiea' | 'project' | 'plan_goal', subtitle?: string, extra: Record<string, string> = {}) => {
+  const renderItem = (id: string, title: string, type: 'goal' | 'hiea' | 'project', subtitle?: string, extra: Record<string, string> = {}) => {
     const config = dailyItems.find(i => i.itemId === id && i.type === type);
     const isSelected = !!config;
 
@@ -208,12 +189,11 @@ export default function DailyReviewManager() {
                     {[
                       { id: 'goal', label: 'الأهداف', icon: Target },
                       { id: 'hiea', label: 'الهيئات', icon: Layers },
-                      { id: 'plan_goal', label: 'الخطط', icon: Activity },
                       { id: 'project', label: 'المشاريع', icon: Briefcase },
                     ].map(tab => (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as 'goal' | 'hiea' | 'plan_goal' | 'project')}
+                        onClick={() => setActiveTab(tab.id as 'goal' | 'hiea' | 'project')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                           activeTab === tab.id ? 'bg-brand-primary text-brand-dark shadow-xl' : 'text-slate-600 hover:text-slate-400'
                         }`}
@@ -240,12 +220,10 @@ export default function DailyReviewManager() {
                   {activeTab === 'goal' && filteredGoals.map(g => renderItem(g.id, g.name, 'goal'))}
                   {activeTab === 'hiea' && filteredHieas.map(h => renderItem(h.id, h.name, 'hiea'))}
                   {activeTab === 'project' && filteredProjects.map(p => renderItem(p.id, p.name, 'project'))}
-                  {activeTab === 'plan_goal' && filteredPlanGoals.map(pg => renderItem(pg.id, pg.title, 'plan_goal', `${pg.planTitle} • ${pg.stageTitle}`, { planId: pg.planId, stageId: pg.stageId }))}
                   
                   {((activeTab === 'goal' && filteredGoals.length === 0) ||
                     (activeTab === 'hiea' && filteredHieas.length === 0) ||
-                    (activeTab === 'project' && filteredProjects.length === 0) ||
-                    (activeTab === 'plan_goal' && filteredPlanGoals.length === 0)) && (
+                    (activeTab === 'project' && filteredProjects.length === 0)) && (
                     <div className="col-span-full py-12 text-center">
                       <p className="text-slate-600 text-sm font-black italic">لا توجد نتائج مطابقة لبحثك</p>
                     </div>

@@ -15,17 +15,13 @@ import {
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { useGoals, useHieas, usePlans, useProjects } from '../hooks/useData';
+import { useGoals, useHieas, useProjects } from '../hooks/useData';
 
 interface WizardItem {
   id: string;
   title: string;
-  type: 'goal' | 'plan_goal' | 'hiea' | 'project';
+  type: 'goal' | 'hiea' | 'project';
   progress?: number;
-  planId?: string;
-  stageId?: string;
-  planTitle?: string;
-  stageTitle?: string;
   kpiCurrent?: number;
   kpiTarget?: number;
   completed?: boolean;
@@ -35,7 +31,6 @@ export default function DailyWizard() {
   const { profile, user } = useAuth();
   const { goals } = useGoals();
   const { hieas } = useHieas();
-  const { plans } = usePlans();
   const { projects } = useProjects();
   
   const [isOpen, setIsOpen] = useState(false);
@@ -45,7 +40,7 @@ export default function DailyWizard() {
 
   // Check if check-in is needed
   useEffect(() => {
-    if (!profile || !user || !goals.length || !hieas.length || !plans.length || !projects.length) return;
+    if (!profile || !user || !goals.length || !hieas.length || !projects.length) return;
     
     // YYYY-MM-DD format
     const todayStr = new Date().toISOString().split('T')[0];
@@ -78,37 +73,14 @@ export default function DailyWizard() {
         })
         .map(p => ({ ...p, type: 'project', title: p.name }));
 
-      const filteredPlanGoals: WizardItem[] = [];
-      (plans || []).forEach(p => {
-        (p.stages || []).forEach(s => {
-          (s.goals || []).forEach(sg => {
-            const cfg = reviewConfig.find(i => i.itemId === sg.id && i.type === 'plan_goal' && i.planId === p.id);
-            if (cfg && today >= new Date(cfg.startDate) && today <= new Date(cfg.endDate)) {
-              filteredPlanGoals.push({ 
-                id: sg.id,
-                title: sg.text,
-                type: 'plan_goal', 
-                planId: p.id, 
-                stageId: s.id, 
-                planTitle: p.title, 
-                stageTitle: s.title,
-                kpiCurrent: sg.kpiCurrent,
-                kpiTarget: sg.kpiTarget,
-                completed: sg.completed
-              });
-            }
-          });
-        });
-      });
-
-      const allItems = [...filteredGoals, ...filteredPlanGoals, ...filteredHieas, ...filteredProjects];
+      const allItems = [...filteredGoals, ...filteredHieas, ...filteredProjects];
       
       if (allItems.length > 0) {
         setItems(allItems);
         setIsOpen(true);
       }
     }
-  }, [profile, user, goals, hieas, plans, projects, isOpen]);
+  }, [profile, user, goals, hieas, projects, isOpen]);
 
   const handleUpdate = async (value: number) => {
     if (!user || items.length === 0) return;
@@ -118,43 +90,18 @@ export default function DailyWizard() {
     try {
       if (item.type === 'goal') {
         const goalRef = doc(db, 'goals', item.id);
-        const newProgress = Math.max(0, Math.min(100, (item.progress || 0) + (value * 5)));
+        const newProgress = Math.max(0, Math.min(100, (item.progress || 0) + (value * 2)));
         await updateDoc(goalRef, {
           progress: newProgress,
           performanceLogs: arrayUnion({
             id: Math.random().toString(36).substr(2, 9),
             value: value,
-            note: value > 0 ? 'تطور إيجابي' : value < 0 ? 'تحديات تنفيذية' : 'استقرار الموقف',
+            note: 'تحديث حالة الهدف اليومي',
             date: new Date().toISOString().split('T')[0],
             recordedBy: user.uid,
             recordedAt: new Date().toISOString()
           })
         });
-      } else if (item.type === 'plan_goal') {
-        const planRef = doc(db, 'plans', item.planId);
-        const plan = plans.find(p => p.id === item.planId);
-        if (plan) {
-          const newStages = plan.stages.map(s => {
-            if (s.id === item.stageId) {
-              return {
-                ...s,
-                goals: s.goals.map(g => {
-                  if (g.id === item.id) {
-                    const newCurrent = Math.max(0, (g.kpiCurrent || 0) + value);
-                    return { 
-                      ...g, 
-                      kpiCurrent: newCurrent, 
-                      completed: g.kpiTarget ? newCurrent >= g.kpiTarget : g.completed 
-                    };
-                  }
-                  return g;
-                })
-              };
-            }
-            return s;
-          });
-          await updateDoc(planRef, { stages: newStages });
-        }
       } else if (item.type === 'hiea') {
         const hieaRef = doc(db, 'hieas', item.id);
         const newProgress = Math.max(0, Math.min(100, (item.progress || 0) + (value * 2)));
@@ -272,12 +219,10 @@ export default function DailyWizard() {
               <div className="flex justify-center">
                 <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${
                   currentItem.type === 'goal' ? 'bg-brand-primary/20 text-brand-primary border border-brand-primary/30' : 
-                  currentItem.type === 'plan_goal' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 
                   currentItem.type === 'project' ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30' :
                   'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                 }`}>
                   {currentItem.type === 'goal' ? <Target size={48} /> : 
-                   currentItem.type === 'plan_goal' ? <Activity size={48} /> : 
                    currentItem.type === 'project' ? <Briefcase size={48} /> : <Layers size={48} />}
                 </div>
               </div>
@@ -285,8 +230,7 @@ export default function DailyWizard() {
               <div className="space-y-3">
                 <h4 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.4em]">
                   {currentItem.type === 'goal' ? 'الهدف الاستراتيجي' : 
-                   currentItem.type === 'plan_goal' ? `${currentItem.planTitle} • ${currentItem.stageTitle}` : 
-                   currentItem.type === 'project' ? 'المشروع التنفيذي' : 'الهيئة الاستراتيجية'}
+                   currentItem.type === 'project' ? 'المشروع التنفيذية' : 'الهيئة الاستراتيجية'}
                 </h4>
                 <h2 className="text-3xl md:text-4xl font-black text-white leading-tight font-display tracking-tight text-center px-4">
                   {currentItem.title}

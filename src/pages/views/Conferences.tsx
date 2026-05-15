@@ -13,7 +13,10 @@ import {
   Edit2, 
   Check, 
   Link as LinkIcon,
-  Search
+  Search,
+  SortAsc,
+  SortDesc,
+  X
 } from 'lucide-react';
 import { useConferences, useHieas, useProjects, useGoals } from '../../hooks/useData';
 import { 
@@ -42,6 +45,9 @@ export default function Conferences() {
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'desc' | 'agenda' | 'related'>('desc');
+  const [sortBy, setSortBy] = useState<'name' | 'startDate' | 'endDate'>('startDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filterHieaId, setFilterHieaId] = useState<string>('all');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -51,6 +57,7 @@ export default function Conferences() {
     description: '',
     agenda: '',
     hieaId: '',
+    hieaIds: [] as string[],
     projectId: '',
     goalId: '',
   });
@@ -63,6 +70,7 @@ export default function Conferences() {
     description: '',
     agenda: '',
     hieaId: '',
+    hieaIds: [] as string[],
     projectId: '',
     goalId: '',
   });
@@ -82,6 +90,7 @@ export default function Conferences() {
       description: '',
       agenda: '',
       hieaId: '',
+      hieaIds: [],
       projectId: '',
       goalId: '',
     });
@@ -170,8 +179,19 @@ export default function Conferences() {
                   <h3 className="text-[10px] font-black uppercase text-slate-600 tracking-[0.4em]">سجل الفعاليات</h3>
                   <span className="text-[10px] bg-white/5 px-4 py-1.5 rounded-none text-slate-500 font-black">{conferences.length} مسجل</span>
                 </div>
-                
-                <div className="mb-4 px-1">
+
+                <div className="mb-4 px-1 space-y-2">
+                   <select 
+                      value={filterHieaId}
+                      onChange={(e) => setFilterHieaId(e.target.value)}
+                      className="w-full bg-white/5 border border-white/5 text-[9px] font-black uppercase tracking-widest px-4 py-2 outline-none focus:border-brand-primary transition-colors appearance-none cursor-pointer text-slate-400 hover:text-white"
+                   >
+                      <option value="all" className="bg-brand-dark">جميع الهيئات</option>
+                      {hieas.map(h => (
+                        <option key={h.id} value={h.id} className="bg-brand-dark">{h.name}</option>
+                      ))}
+                   </select>
+                   
                    <div className="flex items-center bg-white/5 border border-white/5 px-4 py-2 hover:border-white/10 transition-all focus-within:border-brand-primary/30">
                       <Search size={14} className="text-slate-600" />
                       <input 
@@ -182,11 +202,58 @@ export default function Conferences() {
                         className="bg-transparent border-none outline-none text-xs text-slate-300 placeholder:text-slate-600 text-right w-full px-2"
                       />
                    </div>
+
+                   <div className="flex items-center gap-1 justify-between bg-white/[0.02] border border-white/5 p-1">
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                          className="p-2 hover:bg-white/5 text-slate-500 hover:text-brand-primary transition-all rounded-none"
+                          title="عكس الترتيب"
+                        >
+                          {sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />}
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                        {[
+                          { id: 'startDate', label: 'التاريخ' },
+                          { id: 'name', label: 'الاسم' },
+                          { id: 'endDate', label: 'الانتهاء' }
+                        ].map(opt => (
+                          <button
+                            key={opt.id}
+                            onClick={() => setSortBy(opt.id as 'startDate' | 'name' | 'endDate')}
+                            className={`whitespace-nowrap px-3 py-1 text-[9px] font-black uppercase tracking-widest transition-all ${
+                              sortBy === opt.id 
+                              ? 'bg-brand-primary text-brand-dark' 
+                              : 'text-slate-600 hover:text-slate-400'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto space-y-3 px-1 custom-scrollbar pb-6 relative">
                   {conferences
-                    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .filter(c => {
+                      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
+                      const hieaIds = c.hieaIds || (c.hieaId ? [c.hieaId] : []);
+                      const matchesHiea = filterHieaId === 'all' || hieaIds.includes(filterHieaId);
+                      return matchesSearch && matchesHiea;
+                    })
+                    .sort((a, b) => {
+                      let comparison = 0;
+                      if (sortBy === 'name') {
+                        comparison = a.name.localeCompare(b.name);
+                      } else if (sortBy === 'startDate') {
+                        comparison = (a.startDate || '').localeCompare(b.startDate || '');
+                      } else if (sortBy === 'endDate') {
+                        comparison = (a.endDate || '').localeCompare(b.endDate || '');
+                      }
+                      return sortOrder === 'asc' ? comparison : -comparison;
+                    })
                     .map((conf) => (
                     <div
                       key={conf.id}
@@ -202,6 +269,7 @@ export default function Conferences() {
                           hieaId: conf.hieaId || '',
                           projectId: conf.projectId || '',
                           goalId: conf.goalId || '',
+                          hieaIds: conf.hieaIds || (conf.hieaId ? [conf.hieaId] : []),
                         });
                         setIsEditing(false);
                         setActiveTab('desc');
@@ -211,14 +279,18 @@ export default function Conferences() {
                         ? 'bg-white/[0.04] border-brand-primary/30 shadow-lg' 
                         : 'bg-white/[0.02] border-transparent hover:border-white/5'
                       }`}
-                      style={{ borderColor: selectedConf?.id === conf.id ? (hieas.find(h => h.id === conf.hieaId)?.color || '#f59e0b') : undefined }}
+                      style={{ 
+                        borderColor: selectedConf?.id === conf.id 
+                          ? (hieas.find(h => (conf.hieaIds || [conf.hieaId])[0] === h.id)?.color || '#f59e0b') 
+                          : undefined 
+                      }}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <Presentation 
                             size={14} 
                             className="text-brand-primary" 
-                            style={{ color: hieas.find(h => h.id === conf.hieaId)?.color }}
+                            style={{ color: hieas.find(h => (conf.hieaIds || [conf.hieaId])[0] === h.id)?.color }}
                           />
                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                             {conf.startDate} {conf.endDate && conf.endDate !== conf.startDate && `- ${conf.endDate}`}
@@ -226,6 +298,27 @@ export default function Conferences() {
                         </div>
                       </div>
                       <h4 className="text-sm font-bold text-slate-100 mb-1">{conf.name}</h4>
+                      
+                      <div className="flex flex-wrap gap-1 mt-2 mb-2">
+                        {(conf.hieaIds || (conf.hieaId ? [conf.hieaId] : [])).map(hid => {
+                          const h = hieas.find(hiea => hiea.id === hid);
+                          if (!h) return null;
+                          return (
+                            <span 
+                              key={hid}
+                              className="text-[8px] px-2 py-0.5 font-black uppercase tracking-widest border"
+                              style={{ 
+                                color: h.color, 
+                                borderColor: `${h.color}40`,
+                                backgroundColor: `${h.color}10`
+                              }}
+                            >
+                              {h.name}
+                            </span>
+                          );
+                        })}
+                      </div>
+
                       <div className="flex items-center gap-2 text-[10px] text-slate-600">
                         <MapPin size={10} />
                         <span>{conf.location}</span>
@@ -289,7 +382,11 @@ export default function Conferences() {
                     <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-right">
                         <div 
                           className="w-16 h-16 md:w-20 md:h-20 rounded-none bg-brand-primary/10 border-2 border-brand-primary/20 flex items-center justify-center text-brand-primary transition-all shrink-0"
-                          style={{ borderColor: hieas.find(h => h.id === selectedConf.hieaId)?.color, color: hieas.find(h => h.id === selectedConf.hieaId)?.color, backgroundColor: hieas.find(h => h.id === selectedConf.hieaId)?.color ? `${hieas.find(h => h.id === selectedConf.hieaId)?.color}1a` : undefined }}
+                          style={{ 
+                            borderColor: hieas.find(h => (selectedConf.hieaIds || [selectedConf.hieaId])[0] === h.id)?.color, 
+                            color: hieas.find(h => (selectedConf.hieaIds || [selectedConf.hieaId])[0] === h.id)?.color, 
+                            backgroundColor: hieas.find(h => (selectedConf.hieaIds || [selectedConf.hieaId])[0] === h.id)?.color ? `${hieas.find(h => (selectedConf.hieaIds || [selectedConf.hieaId])[0] === h.id)?.color}1a` : undefined 
+                          }}
                         >
                           <Presentation size={32} />
                         </div>
@@ -450,63 +547,103 @@ export default function Conferences() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
-                          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                          className="grid grid-cols-1 gap-6"
                         >
-                          <div className="glass p-6 rounded-none border border-white/5 bg-white/[0.01] space-y-2">
-                             <label className="text-[9px] text-slate-500 font-black uppercase tracking-widest">الهيئة المرتبطة</label>
+                          <div className="glass p-6 rounded-none border border-white/5 bg-white/[0.01] space-y-4">
+                             <label className="text-[9px] text-slate-500 font-black uppercase tracking-widest">الهيئات المرتبطة</label>
                              {isEditing ? (
-                               <select 
-                                 value={editData.hieaId}
-                                 onChange={(e) => setEditData({ ...editData, hieaId: e.target.value })}
-                                 className="w-full bg-white/5 border border-white/10 p-4 text-xs text-slate-300 outline-none mt-2"
-                               >
-                                 <option value="" className="bg-slate-900">غير مرتبط...</option>
-                                 {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
-                               </select>
+                               <div className="space-y-4">
+                                 <select 
+                                   onChange={(e) => {
+                                     const id = e.target.value;
+                                     if (id && !editData.hieaIds?.includes(id)) {
+                                       setEditData({ ...editData, hieaIds: [...(editData.hieaIds || []), id] });
+                                     }
+                                   }}
+                                   className="w-full bg-white/5 border border-white/10 p-4 text-xs text-slate-300 outline-none"
+                                 >
+                                   <option value="" className="bg-slate-900">أضف هيئة جديدة...</option>
+                                   {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
+                                 </select>
+                                 <div className="flex flex-wrap gap-2">
+                                   {editData.hieaIds?.map(id => {
+                                     const h = hieas.find(hiea => hiea.id === id);
+                                     return (
+                                       <div key={id} className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-none group/tag">
+                                         <span className="text-xs text-slate-300" style={{ color: h?.color }}>{h?.name}</span>
+                                         <button 
+                                           onClick={() => setEditData({ ...editData, hieaIds: editData.hieaIds?.filter(i => i !== id) })}
+                                           className="text-slate-600 hover:text-red-500 transition-colors"
+                                         >
+                                           <X size={12} />
+                                         </button>
+                                       </div>
+                                     );
+                                   })}
+                                 </div>
+                               </div>
                              ) : (
-                               <div className="p-4 bg-white/5 border border-white/5 flex items-center gap-4 mt-2">
-                                 <Layers size={16} className="text-brand-primary" />
-                                 <span className="text-sm font-bold text-slate-200">{hieas.find(h => h.id === selectedConf.hieaId)?.name || 'غير مخصص'}</span>
+                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                 {(selectedConf.hieaIds || (selectedConf.hieaId ? [selectedConf.hieaId] : [])).map(hid => {
+                                   const h = hieas.find(hiea => hiea.id === hid);
+                                   if (!h) return null;
+                                   return (
+                                     <div key={hid} className="p-4 bg-white/5 border-r-2 flex items-center gap-4 group hover:bg-white/[0.07] transition-all" style={{ borderRightColor: h.color }}>
+                                       <div className="w-10 h-10 bg-white/5 flex items-center justify-center shrink-0">
+                                         {h.logoUrl ? <img src={h.logoUrl} className="w-full h-full object-contain p-2" /> : <Layers size={16} style={{ color: h.color }} />}
+                                       </div>
+                                       <div className="text-right">
+                                          <p className="text-xs font-bold text-slate-200">{h.name}</p>
+                                          <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black">كفاءة الأداء: {h.progress || 0}%</p>
+                                       </div>
+                                     </div>
+                                   );
+                                 })}
+                                 {(selectedConf.hieaIds || [selectedConf.hieaId]).filter(id => id).length === 0 && (
+                                   <div className="p-4 bg-white/5 border border-white/5 text-slate-600 text-xs text-center font-black uppercase tracking-widest">غير مرتبط بأي هيئة</div>
+                                 )}
                                </div>
                              )}
                           </div>
 
-                          <div className="glass p-6 rounded-none border border-white/5 bg-white/[0.01] space-y-2">
-                             <label className="text-[9px] text-slate-500 font-black uppercase tracking-widest">المبادرة المرتبطة</label>
-                             {isEditing ? (
-                               <select 
-                                 value={editData.projectId}
-                                 onChange={(e) => setEditData({ ...editData, projectId: e.target.value })}
-                                 className="w-full bg-white/5 border border-white/10 p-4 text-xs text-slate-300 outline-none mt-2"
-                               >
-                                 <option value="" className="bg-slate-900">غير مرتبط...</option>
-                                 {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
-                               </select>
-                             ) : (
-                               <div className="p-4 bg-white/5 border border-white/5 flex items-center gap-4 mt-2">
-                                 <Briefcase size={16} className="text-brand-secondary" />
-                                 <span className="text-sm font-bold text-slate-200">{projects.find(p => p.id === selectedConf.projectId)?.name || 'غير مخصص'}</span>
-                               </div>
-                             )}
-                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="glass p-6 rounded-none border border-white/5 bg-white/[0.01] space-y-2">
+                               <label className="text-[9px] text-slate-500 font-black uppercase tracking-widest">المبادرة المرتبطة</label>
+                               {isEditing ? (
+                                 <select 
+                                   value={editData.projectId}
+                                   onChange={(e) => setEditData({ ...editData, projectId: e.target.value })}
+                                   className="w-full bg-white/5 border border-white/10 p-4 text-xs text-slate-300 outline-none mt-2"
+                                 >
+                                   <option value="" className="bg-slate-900">غير مرتبط...</option>
+                                   {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
+                                 </select>
+                               ) : (
+                                 <div className="p-4 bg-white/5 border border-white/5 flex items-center gap-4 mt-2">
+                                   <Briefcase size={16} className="text-brand-secondary" />
+                                   <span className="text-sm font-bold text-slate-200">{projects.find(p => p.id === selectedConf.projectId)?.name || 'غير مخصص'}</span>
+                                 </div>
+                               )}
+                            </div>
 
-                          <div className="glass p-6 rounded-none border border-white/5 bg-white/[0.01] space-y-2">
-                             <label className="text-[9px] text-slate-500 font-black uppercase tracking-widest">الهدف المرتبط</label>
-                             {isEditing ? (
-                               <select 
-                                 value={editData.goalId}
-                                 onChange={(e) => setEditData({ ...editData, goalId: e.target.value })}
-                                 className="w-full bg-white/5 border border-white/10 p-4 text-xs text-slate-300 outline-none mt-2"
-                               >
-                                 <option value="" className="bg-slate-900">غير مرتبط...</option>
-                                 {goals.map(g => <option key={g.id} value={g.id} className="bg-slate-900">{g.name}</option>)}
-                               </select>
-                             ) : (
-                               <div className="p-4 bg-white/5 border border-white/5 flex items-center gap-4 mt-2">
-                                 <Target size={16} className="text-red-400" />
-                                 <span className="text-sm font-bold text-slate-200">{goals.find(g => g.id === selectedConf.goalId)?.name || 'غير مخصص'}</span>
-                               </div>
-                             )}
+                            <div className="glass p-6 rounded-none border border-white/5 bg-white/[0.01] space-y-2">
+                               <label className="text-[9px] text-slate-500 font-black uppercase tracking-widest">الهدف المرتبط</label>
+                               {isEditing ? (
+                                 <select 
+                                   value={editData.goalId}
+                                   onChange={(e) => setEditData({ ...editData, goalId: e.target.value })}
+                                   className="w-full bg-white/5 border border-white/10 p-4 text-xs text-slate-300 outline-none mt-2"
+                                 >
+                                   <option value="" className="bg-slate-900">غير مرتبط...</option>
+                                   {goals.map(g => <option key={g.id} value={g.id} className="bg-slate-900">{g.name}</option>)}
+                                 </select>
+                               ) : (
+                                 <div className="p-4 bg-white/5 border border-white/5 flex items-center gap-4 mt-2">
+                                   <Target size={16} className="text-red-400" />
+                                   <span className="text-sm font-bold text-slate-200">{goals.find(g => g.id === selectedConf.goalId)?.name || 'غير مخصص'}</span>
+                                 </div>
+                               )}
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -551,11 +688,38 @@ export default function Conferences() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-4">
-              <label className="block text-xs font-black uppercase text-slate-600 px-2 tracking-widest">الهيئة</label>
-              <select value={formData.hieaId} onChange={(e) => setFormData({ ...formData, hieaId: e.target.value })} className="w-full bg-white/5 border border-white/10 py-4 px-6 text-slate-300 appearance-none text-right">
-                <option value="" className="bg-slate-900">ربط بهيئة...</option>
-                {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
-              </select>
+              <label className="block text-xs font-black uppercase text-slate-600 px-2 tracking-widest">الهيئات</label>
+              <div className="space-y-3">
+                <select 
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    if (id && !formData.hieaIds.includes(id)) {
+                      setFormData({ ...formData, hieaIds: [...formData.hieaIds, id] });
+                    }
+                  }} 
+                  className="w-full bg-white/5 border border-white/10 py-4 px-6 text-slate-300 appearance-none text-right"
+                >
+                  <option value="" className="bg-slate-900">ربط بهيئة...</option>
+                  {hieas.map(h => <option key={h.id} value={h.id} className="bg-slate-900">{h.name}</option>)}
+                </select>
+                <div className="flex flex-wrap gap-2">
+                  {formData.hieaIds.map(id => {
+                    const h = hieas.find(hiea => hiea.id === id);
+                    return (
+                      <div key={id} className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-none">
+                        <span className="text-[10px] text-slate-300" style={{ color: h?.color }}>{h?.name}</span>
+                        <button 
+                          type="button"
+                          onClick={() => setFormData({ ...formData, hieaIds: formData.hieaIds.filter(i => i !== id) })}
+                          className="text-slate-600 hover:text-red-500 transition-colors"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             <div className="space-y-4">
               <label className="block text-xs font-black uppercase text-slate-600 px-2 tracking-widest">المبادرة</label>

@@ -1,12 +1,14 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Layers, Briefcase, TrendingUp, Clock, Activity, Presentation, Layout } from 'lucide-react';
-import { useGoals, useHieas, useProjects, useConferences, usePlans } from '../../hooks/useData';
+import { Target, Layers, Briefcase, TrendingUp, Clock, Activity, Presentation, Wallet } from 'lucide-react';
+import { useGoals, useHieas, useProjects, useConferences, useStrategicUpdates, useFinance } from '../../hooks/useData';
 import { useAuth } from '../../contexts/AuthContext';
 import ProjectIcon from '../../components/ProjectIcon';
 import DailyWizard from '../../components/DailyWizard';
 import DailyReviewManager from '../../components/DailyReviewManager';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 export default function Overview() {
   const { profile } = useAuth();
@@ -14,15 +16,15 @@ export default function Overview() {
   const { hieas } = useHieas();
   const { projects } = useProjects();
   const { conferences } = useConferences();
-  const { plans } = usePlans();
+  const { updates } = useStrategicUpdates();
+  const { budget } = useFinance();
   const navigate = useNavigate();
 
   // Calculate overall progress across all strategic pillars
   const allEntities = [
     ...(goals || []).map(g => g.progress || 0),
     ...(hieas || []).map(h => h.progress || 0),
-    ...(projects || []).map(p => p.progress || 0),
-    ...(plans || []).map(pl => pl.progress || 0)
+    ...(projects || []).map(p => p.progress || 0)
   ].filter(v => typeof v === 'number' && !isNaN(v));
 
   const totalProgress = allEntities.length > 0 
@@ -32,7 +34,7 @@ export default function Overview() {
   const stats = [
     { label: 'الأهداف والمؤشرات', value: goals.length, icon: Target, color: 'text-brand-primary' },
     { label: 'المشاريع التنفيذية', value: projects.length, icon: Briefcase, color: 'text-teal-400' },
-    { label: 'الخطط الاستراتيجية', value: plans.length, icon: Layout, color: 'text-brand-secondary' },
+    { label: 'الميزانية العامة', value: budget?.total?.toLocaleString() || 0, icon: Wallet, color: 'text-brand-secondary' },
     { label: 'الهيئات الاستراتيجية', value: hieas.length, icon: Layers, color: 'text-emerald-400' },
   ];
 
@@ -156,13 +158,16 @@ export default function Overview() {
                           <span className="text-slate-400">{h.name}</span>
                           <span className="text-brand-primary">{h.progress || 0}% تحقق</span>
                         </div>
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden" role="progressbar" aria-valuenow={h.progress || 0} aria-valuemin={0} aria-valuemax={100} aria-label={`تقدم تحقيق ${h.name}`}>
                            <div className="h-full bg-brand-primary/30 rounded-full" style={{ width: `${h.progress || 0}%` }} />
                         </div>
                       </div>
                     ))}
                     {hieas.length === 0 && (
-                      <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest text-center py-4">No entities active</p>
+                      <div className="flex flex-col items-center justify-center py-6 border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
+                        <Layers size={24} className="text-slate-800 mb-2" />
+                        <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest text-center">لا توجد هيئات استراتيجية نشطة حالياً</p>
+                      </div>
                     )}
                  </div>
               </div>
@@ -178,18 +183,30 @@ export default function Overview() {
                  </div>
                  <div className="space-y-3">
                     {conferences.slice(0, 2).map((c, idx) => (
-                      <div key={idx} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer">
+                      <div 
+                        key={idx} 
+                        onClick={() => navigate('/dashboard/calendar')}
+                        className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer group/conf"
+                      >
                          <div className="text-right">
-                            <p className="text-xs font-bold text-white">{c.name}</p>
+                            <p className="text-xs font-bold text-white group-hover/conf:text-brand-primary transition-colors">{c.name}</p>
                             <p className="text-[9px] text-brand-primary font-black uppercase mt-1">{c.date}</p>
                          </div>
                          <div className="w-2 h-2 rounded-full bg-brand-primary shadow-[0_0_10px_rgba(45,212,191,0.5)]" />
                       </div>
                     ))}
                     {conferences.length === 0 && (
-                      <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest text-center py-4">No events scheduled</p>
+                      <div className="flex flex-col items-center justify-center py-6 border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
+                        <Clock size={24} className="text-slate-800 mb-2" />
+                        <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest text-center">لا توجد فعاليات مجدولة</p>
+                      </div>
                     )}
-                    <button className="w-full py-3 rounded-2xl border border-dashed border-white/10 text-[9px] font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest">عرض التقويم الاستراتيجي</button>
+                    <button 
+                      onClick={() => navigate('/dashboard/calendar')}
+                      className="w-full py-3 rounded-2xl border border-dashed border-white/10 text-[9px] font-black text-slate-500 hover:text-white hover:border-brand-primary/30 transition-all uppercase tracking-widest"
+                    >
+                      عرض التقويم الاستراتيجي بالكامل
+                    </button>
                  </div>
               </div>
            </div>
@@ -208,38 +225,73 @@ export default function Overview() {
           </div>
           
           <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px] no-scrollbar pr-1">
-            {projects.slice(0, 6).map((p, i) => (
+            {updates.length > 0 ? (
+              updates.slice(0, 8).map((upd, i) => (
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex gap-4 items-start group w-full text-right bg-white/[0.02] hover:bg-white/[0.04] p-5 rounded-2xl transition-all border border-white/5 hover:border-brand-primary/10"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary shrink-0 border border-brand-primary/20">
+                    <ProjectIcon name={upd.icon || 'Activity'} size={24} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-2">
+                       <div className="text-right">
+                          <p className="text-[10px] font-black text-brand-primary uppercase tracking-[0.2em] mb-1">{upd.type === 'milestone' ? 'إجمالي الإنجاز' : 'تحديث استراتيجي'}</p>
+                          <h4 className="text-sm font-black text-white group-hover:text-brand-primary transition-colors">{upd.title}</h4>
+                       </div>
+                       <span className="text-[8px] text-slate-600 font-bold uppercase whitespace-nowrap pt-1">
+                         {upd.createdAt && format(upd.createdAt.toDate ? upd.createdAt.toDate() : new Date(upd.createdAt), 'HH:mm', { locale: ar })}
+                       </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-bold leading-relaxed line-clamp-2">{upd.content}</p>
+                    <div className="mt-3 flex items-center gap-2 text-[9px] font-black text-slate-600 uppercase tracking-tighter">
+                       <span className="text-slate-500">{upd.entityName}</span>
+                       <div className="w-1 h-1 rounded-full bg-white/10" />
+                       <span className="hover:text-brand-primary cursor-pointer transition-colors" onClick={() => navigate(upd.type === 'milestone' ? '/dashboard/projects' : '/dashboard/analytics')}>عرض التفاصيل التنفيذية</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            ) : projects.slice(0, 6).map((p, i) => (
               <motion.button 
                 key={i} 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => navigate('/dashboard/projects')}
-                className="flex gap-4 items-center group w-full text-right bg-white/[0.01] hover:bg-white/[0.03] p-4 rounded-2xl transition-all border border-transparent hover:border-brand-primary/10"
+                className="flex gap-4 items-center group w-full text-right bg-white/[0.01] hover:bg-white/[0.03] p-4 rounded-2xl transition-all border border-transparent hover:border-brand-primary/10 focus:outline-none focus:ring-1 focus:ring-brand-primary/30"
+                aria-label={`عرض مشروع ${p.name}`}
               >
                 <div className="w-10 h-10 rounded-xl bg-brand-primary/5 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-brand-dark transition-all">
                   <ProjectIcon name={p.icon} size={18} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-0.5">
+                  <div className="flex justify-between items-center mb-1">
                     <p className="text-[11px] font-black text-slate-200 group-hover:text-brand-primary transition-colors truncate">
                       {p.name}
                     </p>
-                    <span className="text-[8px] text-slate-600 font-bold">12m</span>
+                    <span className="text-[8px] text-slate-600 font-bold uppercase tracking-widest">عرض المسار</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
-                       <div className="h-full bg-brand-primary/40" style={{ width: `${p.progress}%` }} />
+                    <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden" role="progressbar" aria-valuenow={p.progress} aria-valuemin={0} aria-valuemax={100}>
+                       <div className="h-full bg-brand-primary/40 group-hover:bg-brand-primary transition-colors" style={{ width: `${p.progress}%` }} />
                     </div>
-                    <span className="text-[9px] font-black text-slate-400">{p.progress}%</span>
+                    <span className="text-[9px] font-black text-slate-400 group-hover:text-brand-primary transition-colors">{p.progress}%</span>
                   </div>
                 </div>
               </motion.button>
             ))}
-            {projects.length === 0 && (
-              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-800">
-                <Activity size={40} className="mb-4 opacity-5" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-20">Monitoring Data Stream...</p>
+            {projects.length === 0 && updates.length === 0 && (
+              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-700 bg-white/[0.01] rounded-[2rem] border border-dashed border-white/5">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                  <Activity size={32} className="opacity-20 animate-pulse" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">بانتظار تدفق البيانات الاستراتيجية...</p>
+                <p className="text-[8px] font-bold text-slate-800 mt-2">Strategic Feed Idle</p>
               </div>
             )}
           </div>

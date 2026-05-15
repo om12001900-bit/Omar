@@ -17,7 +17,8 @@
             "themeColor": { "type": "string" },
             "darkMode": { "type": "boolean" },
             "fontSize": { "type": "string", "enum": ["small", "medium", "large"] },
-            "borderRadius": { "type": "string", "enum": ["none", "small", "medium", "full"] }
+            "borderRadius": { "type": "string", "enum": ["none", "small", "medium", "full"] },
+            "defaultCalendarView": { "type": "string", "enum": ["grid", "agenda"] }
           }
         },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -38,6 +39,10 @@
         "projectId": { "type": "string" },
         "category": { "type": "string", "enum": ["OV9", "S15"] },
         "progress": { "type": "number" },
+        "kpiTitle": { "type": "string" },
+        "kpiTarget": { "type": "number" },
+        "kpiCurrent": { "type": "number" },
+        "kpiUnit": { "type": "string" },
         "performanceLogs": {
           "type": "array",
           "items": { "$ref": "#/definitions/PerformanceLog" }
@@ -98,11 +103,28 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "subGoals": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "challenges": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "requiredResources": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
         "performanceLogs": {
           "type": "array",
           "items": { "$ref": "#/definitions/PerformanceLog" }
         },
         "icon": { "type": "string" },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -147,48 +169,64 @@
       },
       "required": ["title", "date", "startTime", "endTime", "ownerId", "createdAt"]
     },
-    "Plan": {
-      "title": "Plan",
-      "description": "Strategic plan for an entity",
+    "StrategicUpdate": {
+      "title": "Strategic Update",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "hieaId": { "type": "string" },
         "title": { "type": "string" },
-        "description": { "type": "string" },
-        "startDate": { "type": "string", "format": "date" },
-        "endDate": { "type": "string", "format": "date" },
-        "stages": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "string" },
-              "title": { "type": "string" },
-              "goals": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": { "type": "string" },
-                    "text": { "type": "string" },
-                    "completed": { "type": "boolean" }
-                  }
-                }
-              },
-              "startDate": { "type": "string", "format": "date" },
-              "endDate": { "type": "string", "format": "date" },
-              "status": { "type": "string", "enum": ["pending", "in-progress", "completed"] }
-            }
-          }
-        },
-        "performanceIndicator": { "type": "number" },
-        "progress": { "type": "number" },
+        "content": { "type": "string" },
+        "type": { "type": "string" },
+        "entityId": { "type": "string" },
+        "entityName": { "type": "string" },
         "ownerId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "General budget with cash and digital breakdown",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "total": { "type": "number" },
+        "cash": { "type": "number" },
+        "digital": { "type": "number" },
+        "ownerId": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["hieaId", "title", "ownerId", "createdAt"]
+      "required": ["total", "ownerId", "updatedAt"]
+    },
+    "WishlistItem": {
+      "title": "Wishlist Item",
+      "description": "Product desired to be purchased with price comparison logic",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "isBought": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["desire", "bought"] },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "ownerId", "createdAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Record of income or expense",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "category": { "type": "string", "enum": ["cash", "digital"] },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "amount", "ownerId", "createdAt"]
     }
   },
   "firestore": {
@@ -216,9 +254,17 @@
       "schema": "CalendarEvent",
       "description": "Calendar events"
     },
-    "/plans/{planId}": {
-      "schema": "Plan",
-      "description": "Entity strategic plans"
+    "/budgets/{budgetId}": {
+      "schema": "Budget",
+      "description": "User local budgets"
+    },
+    "/wishlist/{itemId}": {
+      "schema": "WishlistItem",
+      "description": "Shopping wishes"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Financial logs"
     }
   }
 }

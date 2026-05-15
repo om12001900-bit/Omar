@@ -67,6 +67,7 @@ interface AuthContextType {
   login: (identifier: string, isPhone: boolean, password: string) => Promise<void>;
   register: (identifier: string, isPhone: boolean, password: string, displayName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  linkGoogleCalendar: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -106,7 +107,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               photoURL: firebaseUser.photoURL || '',
               createdAt: serverTimestamp()
             };
-            await setDoc(profileRef, newProfile);
+            try {
+              await setDoc(profileRef, newProfile);
+            } catch (error) {
+              handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}`);
+            }
             setProfile(newProfile);
           }
         } catch (error) {
@@ -156,6 +161,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithPopup(auth, provider);
   };
 
+  const linkGoogleCalendar = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
+    const result = await signInWithPopup(auth, provider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const token = credential?.accessToken;
+    
+    if (token && user) {
+      await updateProfile({
+        integrations: {
+          ...profile?.integrations,
+          googleCalendar: {
+            linked: true,
+            lastSync: new Date().toISOString(),
+            email: result.user.email || undefined
+          }
+        }
+      });
+      sessionStorage.setItem('google_calendar_token', token);
+    }
+  };
+
   const uploadAvatar = async (_file: File) => {
     void _file;
     const fakeUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`;
@@ -164,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut, updateProfile, uploadAvatar, login, register, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut, updateProfile, uploadAvatar, login, register, signInWithGoogle, linkGoogleCalendar }}>
       {children}
     </AuthContext.Provider>
   );

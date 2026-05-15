@@ -11,16 +11,34 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isVerified() {
-      return isSignedIn() && (request.auth.token.email_verified == true || isAdmin());
-    }
-
     function isOwner(ownerId) {
       return isSignedIn() && request.auth.uid == ownerId;
     }
 
+    function isAdmin() {
+      // Hardcoded admins based on request info supplied by platform
+      return isSignedIn() && (
+        request.auth.token.email == "om12001900@gmail.com" ||
+        request.auth.token.email == "om12101900@gmail.com" ||
+        request.auth.uid == "g2JnHl4iKRdJwjSDUYCdvQAZU0E2" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isStaticAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "om12001900@gmail.com" ||
+        request.auth.token.email == "om12101900@gmail.com" ||
+        request.auth.uid == "g2JnHl4iKRdJwjSDUYCdvQAZU0E2"
+      );
+    }
+
+    function isVerified() {
+      return isSignedIn();
+    }
+
     function isValidId(id) {
-      return id is string && id.size() <= 128 && (id == '' || id.matches('^[a-zA-Z0-9_\\-]+$'));
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
     function incoming() {
@@ -31,185 +49,140 @@ service cloud.firestore {
       return resource.data;
     }
 
-    function isAdmin() {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (request.auth.token.email in ['om12001900@gmail.com', 'om12101900@gmail.com']) ||
-        (request.auth.uid in ['g2JnHl4iKRdJwjSDUYCdvQAZU0E2'])
-      );
-    }
-
     // --- Entity Validations ---
     function isValidUser(data) {
-      return data.uid == request.auth.uid &&
+      return (data.uid == request.auth.uid || isStaticAdmin()) &&
              data.displayName is string && data.displayName.size() <= 100 &&
-             (!data.keys().contains('email') || (data.email is string && data.email.size() <= 255)) &&
-             (!data.keys().contains('phoneNumber') || (data.phoneNumber is string && data.phoneNumber.size() <= 30)) &&
-             (!data.keys().contains('bio') || (data.bio is string && data.bio.size() <= 1000)) &&
-             (!data.keys().contains('photoURL') || (data.photoURL is string && data.photoURL.size() <= 1000)) &&
              data.createdAt != null;
     }
 
     function isValidGoal(data) {
-      return (data.ownerId == request.auth.uid || isAdmin()) &&
+      return (data.ownerId == request.auth.uid || isStaticAdmin()) &&
              data.keys().hasAll(['name', 'type', 'category', 'ownerId', 'createdAt']) &&
-             data.name is string && data.name.size() <= 200 &&
-             data.type in ['objective', 'target'] &&
-             data.category in ['OV9', 'S15'] &&
-             (!data.keys().contains('progress') || data.progress is number) &&
-             (!data.keys().contains('performanceLogs') || data.performanceLogs is list) &&
-             (!data.keys().contains('hieaId') || isValidId(data.hieaId)) &&
-             (!data.keys().contains('startDate') || data.startDate is string) &&
-             (!data.keys().contains('endDate') || data.endDate is string) &&
-             data.createdAt != null;
+             data.name is string && data.name.size() <= 200;
     }
 
     function isValidHiea(data) {
-      return (data.ownerId == request.auth.uid || isAdmin()) &&
+      return (data.ownerId == request.auth.uid || isStaticAdmin()) &&
              data.keys().hasAll(['name', 'ownerId', 'createdAt']) &&
-             data.name is string && data.name.size() <= 200 &&
-             (!data.keys().contains('color') || data.color is string) &&
-             (!data.keys().contains('logoUrl') || data.logoUrl is string) &&
-             (!data.keys().contains('progress') || data.progress is number) &&
-             (!data.keys().contains('performanceLogs') || data.performanceLogs is list) &&
-             data.createdAt != null;
+             data.name is string && data.name.size() <= 200;
     }
 
     function isValidProject(data) {
-      return (data.ownerId == request.auth.uid || isAdmin()) &&
+      return (data.ownerId == request.auth.uid || isStaticAdmin()) &&
              data.keys().hasAll(['name', 'ownerId', 'createdAt']) &&
-             data.name is string && data.name.size() <= 200 &&
-             (!data.keys().contains('status') || data.status in ['upcoming', 'in-progress', 'pending_completion', 'completed']) &&
-             (!data.keys().contains('progress') || (data.progress is number && data.progress >= 0 && data.progress <= 100)) &&
-             (!data.keys().contains('description') || data.description is string) &&
-             (!data.keys().contains('startDate') || data.startDate is string) &&
-             (!data.keys().contains('endDate') || data.endDate is string) &&
-             (!data.keys().contains('hieaId') || isValidId(data.hieaId)) &&
-             (!data.keys().contains('hieaIds') || data.hieaIds is list) &&
-             (!data.keys().contains('goalId') || data.goalId == '' || isValidId(data.goalId)) &&
-             (!data.keys().contains('tags') || data.tags is list) &&
-             (!data.keys().contains('icon') || data.icon is string) &&
-             (!data.keys().contains('milestones') || data.milestones is list) &&
-             (!data.keys().contains('performanceLogs') || data.performanceLogs is list) &&
-             data.createdAt != null;
+             data.name is string && data.name.size() <= 200;
     }
 
-    function isValidConference(data) {
-      return (data.ownerId == request.auth.uid || isAdmin()) &&
-             data.keys().hasAll(['name', 'ownerId', 'createdAt']) &&
-             data.name is string && data.name.size() <= 200 &&
-             (!data.keys().contains('description') || data.description is string) &&
-             data.createdAt != null;
+    function isValidBudget(data) {
+      return (data.ownerId == request.auth.uid || isStaticAdmin()) &&
+             data.keys().hasAll(['total', 'cash', 'digital', 'ownerId', 'updatedAt']) &&
+             data.total is number && data.cash is number && data.digital is number;
     }
 
-    function isValidEvent(data) {
-      return (data.ownerId == request.auth.uid || isAdmin()) &&
-             data.keys().hasAll(['title', 'date', 'startTime', 'endTime', 'ownerId', 'createdAt']) &&
-             data.title is string && data.title.size() <= 200 &&
-             (!data.keys().contains('date') || data.date is string) &&
-             (!data.keys().contains('startTime') || data.startTime is string) &&
-             (!data.keys().contains('endTime') || data.endTime is string) &&
-             (!data.keys().contains('description') || data.description is string) &&
-             (!data.keys().contains('type') || data.type in ['meeting', 'milestone', 'deadline', 'other']) &&
-             (!data.keys().contains('priority') || data.priority in ['low', 'medium', 'high', 'critical']) &&
-             data.createdAt != null;
+    function isValidWishlistItem(data) {
+      return (data.ownerId == request.auth.uid || isStaticAdmin()) &&
+             data.keys().hasAll(['name', 'price', 'isBought', 'ownerId', 'createdAt']) &&
+             data.name is string && data.price is number;
     }
 
-    function isValidPlan(data) {
-      return (data.ownerId == request.auth.uid || isAdmin()) &&
-             data.keys().hasAll(['hieaId', 'title', 'ownerId', 'createdAt']) &&
-             data.title is string && data.title.size() <= 200 &&
-             isValidId(data.hieaId) &&
-             (!data.keys().contains('description') || data.description is string) &&
-             (!data.keys().contains('startDate') || data.startDate is string) &&
-             (!data.keys().contains('endDate') || data.endDate is string) &&
-             (!data.keys().contains('stages') || data.stages is list) &&
-             (!data.keys().contains('performanceIndicator') || data.performanceIndicator is number) &&
-             (!data.keys().contains('progress') || data.progress is number) &&
-             data.createdAt != null;
+    function isValidTransaction(data) {
+      return (data.ownerId == request.auth.uid || isStaticAdmin()) &&
+             data.keys().hasAll(['type', 'amount', 'category', 'ownerId', 'createdAt']) &&
+             data.type in ['income', 'expense'] && data.amount is number;
     }
 
-    // --- Resource Routes ---
+    function isValidStrategicUpdate(data) {
+      return (data.ownerId == request.auth.uid || isStaticAdmin()) &&
+             data.keys().hasAll(['title', 'content', 'type', 'entityId', 'entityName', 'ownerId', 'createdAt']) &&
+             data.title is string && data.content is string;
+    }
+
+    // --- Routes ---
 
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
-      allow update: if isOwner(userId) && isValidUser(incoming()) && 
-                    isVerified() &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'phoneNumber', 'settings', 'bio']);
+      allow get: if isOwner(userId) || isStaticAdmin();
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if (isOwner(userId) || isStaticAdmin()) && isValidUser(incoming());
     }
 
     match /goals/{goalId} {
-      allow get: if isOwner(existing().ownerId) || isAdmin();
-      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
-      allow create: if (isOwner(incoming().ownerId) || isAdmin()) && isVerified() && isValidId(goalId) && isValidGoal(incoming());
-      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isVerified() && isValidGoal(incoming()) &&
-                    incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'category', 'progress', 'milestones', 'startDate', 'endDate', 'projectId', 'hieaId', 'performanceLogs', 'updatedAt']);
-      allow delete: if isOwner(existing().ownerId) || isAdmin();
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isValidGoal(incoming());
+      allow update: if (isOwner(existing().ownerId) || isStaticAdmin()) && isValidGoal(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId) || isStaticAdmin();
     }
 
     match /hieas/{hieaId} {
-      allow get: if isOwner(existing().ownerId) || isAdmin();
-      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
-      allow create: if (isOwner(incoming().ownerId) || isAdmin()) && isVerified() && isValidId(hieaId) && isValidHiea(incoming());
-      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isVerified() && isValidHiea(incoming()) &&
-                    incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'laws', 'procedures', 'achievements', 'logoUrl', 'color', 'progress', 'goalIds', 'performanceLogs', 'updatedAt']);
-      allow delete: if isOwner(existing().ownerId) || isAdmin();
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isValidHiea(incoming());
+      allow update: if (isOwner(existing().ownerId) || isStaticAdmin()) && isValidHiea(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId) || isStaticAdmin();
     }
 
     match /projects/{projectId} {
-      allow get: if isOwner(existing().ownerId);
-      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
-      allow create: if (isOwner(incoming().ownerId) || isAdmin()) && isVerified() && isValidProject(incoming());
-      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isVerified() &&
-                    isValidProject(incoming()) &&
-                    incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'startDate', 'endDate', 'status', 'progress', 'milestones', 'hieaId', 'hieaIds', 'goalId', 'tags', 'icon', 'performanceLogs', 'updatedAt']) &&
-                    (
-                      // Only admins can move to 'completed'
-                      (incoming().status != 'completed' || isAdmin()) ||
-                      // Or if it was already completed (maybe updating other fields?) 
-                      // Actually, if it's completed, it's terminal for owners usually.
-                      (existing().status == 'completed' && incoming().status == 'completed')
-                    );
-      allow delete: if isOwner(existing().ownerId) || isAdmin();
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isValidProject(incoming());
+      allow update: if (isOwner(existing().ownerId) || isStaticAdmin()) && isValidProject(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId) || isStaticAdmin();
+    }
+
+    match /budgets/{budgetId} {
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isValidBudget(incoming());
+      allow update: if (isOwner(existing().ownerId) || isStaticAdmin()) && isValidBudget(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+    }
+
+    match /wishlist/{itemId} {
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isValidWishlistItem(incoming());
+      allow update: if (isOwner(existing().ownerId) || isStaticAdmin()) && isValidWishlistItem(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isOwner(existing().ownerId) || isStaticAdmin();
+    }
+
+    match /transactions/{transactionId} {
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isValidTransaction(incoming());
+      allow delete: if isOwner(existing().ownerId) || isStaticAdmin();
     }
 
     match /admins/{adminId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow write: if isStaticAdmin();
     }
 
     match /conferences/{conferenceId} {
-      allow get: if isOwner(existing().ownerId);
-      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if (isOwner(incoming().ownerId) || isAdmin()) && isVerified() && isValidId(conferenceId) && isValidConference(incoming());
-      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isVerified() && isValidConference(incoming()) &&
-                    incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'startDate', 'endDate', 'location', 'hieaId', 'projectId', 'goalId', 'description', 'agenda', 'updatedAt']);
-      allow delete: if isOwner(existing().ownerId) || isAdmin();
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isVerified();
+      allow update: if (isOwner(existing().ownerId) || isStaticAdmin()) && isVerified();
+      allow delete: if isOwner(existing().ownerId) || isStaticAdmin();
     }
 
     match /calendar_events/{eventId} {
-      allow get: if isOwner(existing().ownerId);
-      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      allow create: if (isOwner(incoming().ownerId) || isAdmin()) && isVerified() && isValidId(eventId) && isValidEvent(incoming());
-      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isVerified() && isValidEvent(incoming()) &&
-                    incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'date', 'type', 'priority', 'hieaId', 'projectId', 'isCompleted', 'updatedAt']);
-      allow delete: if isOwner(existing().ownerId) || isAdmin();
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isVerified();
+      allow update: if (isOwner(existing().ownerId) || isStaticAdmin()) && isVerified();
+      allow delete: if isOwner(existing().ownerId) || isStaticAdmin();
     }
 
-    match /plans/{planId} {
-      allow get: if isOwner(existing().ownerId) || isAdmin();
-      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
-      allow create: if (isOwner(incoming().ownerId) || isAdmin()) && isVerified() && isValidId(planId) && isValidPlan(incoming());
-      allow update: if (isOwner(existing().ownerId) || isAdmin()) && isVerified() && isValidPlan(incoming()) &&
-                    incoming().ownerId == existing().ownerId &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'startDate', 'endDate', 'stages', 'performanceIndicator', 'progress', 'updatedAt']);
-      allow delete: if isOwner(existing().ownerId) || isAdmin();
+    match /strategic_updates/{updateId} {
+      allow get: if isOwner(existing().ownerId) || isStaticAdmin();
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaticAdmin());
+      allow create: if (isOwner(incoming().ownerId) || isStaticAdmin()) && isVerified() && isValidStrategicUpdate(incoming());
+      allow delete: if isOwner(existing().ownerId) || isStaticAdmin();
     }
   }
 }

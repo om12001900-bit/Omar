@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Settings as SettingsIcon, Shield, User, Bell, Database, ChevronLeft, Save, 
   Mail, Phone, Type, AlignLeft, Camera, Upload, Trash2, Palette, Download, 
-  CheckCircle2, AlertCircle, RefreshCw, Smartphone, Sun, Moon, Maximize2
+  CheckCircle2, AlertCircle, RefreshCw, Smartphone, Sun, Moon, Maximize2,
+  Calendar as CalendarIcon, LayoutGrid, List as ListIcon, Globe
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
@@ -18,7 +19,7 @@ import {
 } from 'firebase/firestore';
 
 export default function Settings() {
-  const { profile, updateProfile, uploadAvatar, user } = useAuth();
+  const { profile, updateProfile, uploadAvatar, user, linkGoogleCalendar } = useAuth();
   const { settings, updateSettings } = useUI();
   const { hieas } = useHieas();
   const { projects } = useProjects();
@@ -32,7 +33,7 @@ export default function Settings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    displayName: profile?.displayName || '',
+    displayName: profile?.displayName || 'مستخدم تجريبي',
     email: profile?.email || '',
     phoneNumber: profile?.phoneNumber || '',
     bio: profile?.bio || ''
@@ -49,7 +50,9 @@ export default function Settings() {
     { id: 'appearance', title: 'تخصيص الواجهة', icon: Palette, desc: 'تخصيص الألوان والسمات البصرية' },
     { id: 'security', title: 'الأمان والخصوصية', icon: Shield, desc: 'تحديث كلمة المرور وإعدادات الوصول' },
     { id: 'notifications', title: 'التنبيهات', icon: Bell, desc: 'تخصيص مركز الإشعارات والبريد' },
+    { id: 'integrations', title: 'تكامل الخدمات', icon: Globe, desc: 'ربط الخدمات الخارجية (مثل تقويم Google)' },
     { id: 'database', title: 'إدارة البيانات', icon: Database, desc: 'النسخ الاحتياطي وتصدير الموارد' },
+    { id: 'about', title: 'حول المنصة', icon: AlertCircle, desc: 'تفاصيل الإصدار ورؤية المشروع' },
   ];
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -114,7 +117,7 @@ export default function Settings() {
       conferences,
       timestamp: new Date().toISOString(),
       system: 'O.V.9 Quantum Tracker',
-      version: '1.0'
+      version: '1.0.0'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -285,7 +288,7 @@ export default function Settings() {
                   {profile?.photoURL ? (
                     <img src={profile.photoURL} alt="Avatar" className="w-full h-full object-cover grayscale group-hover/avatar:grayscale-0 transition-all opacity-80 group-hover/avatar:opacity-100" />
                   ) : (
-                    profile?.displayName?.charAt(0) || 'O'
+                    profile?.displayName?.charAt(0) || 'م'
                   )}
                   <div className="absolute inset-0 bg-brand-dark/80 opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center transition-all">
                     <Camera size={20} className="mb-1 text-brand-primary" />
@@ -300,7 +303,7 @@ export default function Settings() {
                 <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
                 
                 <div className="text-right">
-                  <h2 className="text-2xl font-display font-black text-white">{profile?.displayName || 'Omar Apps'}</h2>
+                  <h2 className="text-2xl font-display font-black text-white">{profile?.displayName || 'مستخدم تجريبي'}</h2>
                   <p className="text-slate-400 font-bold">{profile?.email}</p>
                   <div className="flex items-center gap-4 justify-end mt-2">
                     {profile?.phoneNumber && (
@@ -438,55 +441,62 @@ export default function Settings() {
                 <form onSubmit={handleProfileUpdate} className="space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
-                      <label className="flex items-center gap-2 flex-row-reverse text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2">
+                      <label htmlFor="display-name" className="flex items-center gap-2 flex-row-reverse text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2">
                         <Type size={12} className="text-brand-primary" />
                         الاسم الكامل
                       </label>
                       <input 
+                        id="display-name"
                         type="text" 
                         value={formData.displayName}
                         onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                        className="w-full bg-brand-dark border border-white/10 p-4 outline-none focus:border-brand-primary text-slate-200 font-bold text-right transition-all"
+                        className="w-full bg-brand-dark border border-white/10 p-4 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 text-slate-200 font-bold text-right transition-all"
                         required
+                        aria-required="true"
                       />
                     </div>
                     <div className="space-y-3">
-                      <label className="flex items-center gap-2 flex-row-reverse text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2">
+                      <label htmlFor="email" className="flex items-center gap-2 flex-row-reverse text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2">
                         <Mail size={12} className="text-brand-primary" />
                         البريد الإلكتروني
                       </label>
                       <input 
+                        id="email"
                         type="email" 
                         value={formData.email}
                         readOnly
+                        disabled
                         className="w-full bg-white/5 border border-white/5 p-4 outline-none text-slate-600 font-bold text-right cursor-not-allowed"
+                        aria-disabled="true"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <label className="flex items-center gap-2 flex-row-reverse text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2">
+                    <label htmlFor="phone-number" className="flex items-center gap-2 flex-row-reverse text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2">
                       <Phone size={12} className="text-brand-primary" />
                       رقم الهاتف الاستراتيجي
                     </label>
                     <input 
+                      id="phone-number"
                       type="tel" 
                       value={formData.phoneNumber}
                       onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                      className="w-full bg-brand-dark border border-white/10 p-4 outline-none focus:border-brand-primary text-slate-200 font-bold text-right transition-all"
+                      className="w-full bg-brand-dark border border-white/10 p-4 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 text-slate-200 font-bold text-right transition-all"
                       placeholder="+966 50 000 0000"
                     />
                   </div>
 
                   <div className="space-y-3">
-                    <label className="flex items-center gap-2 flex-row-reverse text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2">
+                    <label htmlFor="bio" className="flex items-center gap-2 flex-row-reverse text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2">
                       <AlignLeft size={12} className="text-brand-primary" />
                       النبذة التعريفية
                     </label>
                     <textarea 
+                      id="bio"
                       value={formData.bio}
                       onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                      className="w-full bg-brand-dark border border-white/10 p-4 outline-none focus:border-brand-primary text-slate-200 font-bold text-right h-32 resize-none transition-all"
+                      className="w-full bg-brand-dark border border-white/10 p-4 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 text-slate-200 font-bold text-right h-32 resize-none transition-all"
                     />
                   </div>
 
@@ -621,6 +631,29 @@ export default function Settings() {
                     </div>
                   </div>
 
+                  {/* Calendar View Setting */}
+                  <div className="space-y-6 pt-10 border-t border-white/5">
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-100 flex items-center gap-4 flex-row-reverse">
+                      <CalendarIcon size={20} className="text-brand-primary" />
+                      عرض التقويم الافتراضي
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { id: 'grid', label: 'عرض الشبكة (شهر)', icon: LayoutGrid },
+                        { id: 'agenda', label: 'عرض الأجندة', icon: ListIcon }
+                      ].map(view => (
+                        <button 
+                          key={view.id}
+                          onClick={() => updateSettings({ defaultCalendarView: view.id as 'grid' | 'agenda' })}
+                          className={`p-6 border flex flex-col items-center gap-3 transition-all ${settings.defaultCalendarView === view.id ? 'bg-brand-primary/10 border-brand-primary text-brand-primary shadow-lg shadow-brand-primary/5' : 'bg-white/5 border-white/5 text-slate-500 hover:bg-white/10'}`}
+                        >
+                          <view.icon size={24} />
+                          <span className="text-[10px] font-black uppercase tracking-widest">{view.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="p-6 border border-brand-primary/10 bg-brand-primary/[0.01]">
                     <div className="flex items-center gap-3 text-brand-primary mb-2 flex-row-reverse">
                       <Smartphone size={14} />
@@ -702,6 +735,69 @@ export default function Settings() {
               </div>
             )}
 
+            {activeTab === 'integrations' && (
+              <div className="max-w-3xl w-full mx-auto space-y-10">
+                <div className="bg-white/[0.01] border border-white/5 p-10 glass space-y-8">
+                  <div className="flex items-center gap-4 flex-row-reverse text-brand-primary">
+                    <Globe size={32} />
+                    <h3 className="text-xl font-display font-black text-white">تكامل الخدمات الخارجية</h3>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="p-8 bg-white/5 border border-white/10 flex flex-col md:flex-row-reverse items-center justify-between gap-6 group hover:border-brand-primary transition-all">
+                      <div className="flex items-center gap-6 flex-row-reverse">
+                        <div className="w-16 h-16 bg-white/5 flex items-center justify-center rounded-full overflow-hidden p-3 border border-white/10">
+                           <img src="https://www.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png" alt="Google Calendar" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="text-right">
+                          <h4 className="text-lg font-black text-white">Google Calendar</h4>
+                          <p className="text-xs text-slate-500 font-bold">مزامنة المواعيد والمستهدفات مع تقويم جوجل الخاص بك.</p>
+                        </div>
+                      </div>
+
+                      {profile?.integrations?.googleCalendar?.linked ? (
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2 text-brand-primary text-[10px] font-black uppercase tracking-widest">
+                            <CheckCircle2 size={14} />
+                            <span>متصل بنجاح</span>
+                          </div>
+                          <p className="text-[9px] text-slate-500">{profile.integrations.googleCalendar.email}</p>
+                          <button 
+                            className="text-[9px] font-black text-red-500 uppercase tracking-widest hover:underline mt-2"
+                            onClick={() => updateProfile({ integrations: { ...profile.integrations, googleCalendar: undefined } })}
+                          >
+                            قطع الاتصال
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={linkGoogleCalendar}
+                          className="bg-brand-primary text-brand-dark px-8 py-3 font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all"
+                        >
+                          ربط التقويم
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="p-8 bg-white/5 border border-white/10 opacity-50 flex flex-col md:flex-row-reverse items-center justify-between gap-6">
+                      <div className="flex items-center gap-6 flex-row-reverse">
+                        <div className="w-16 h-16 bg-white/5 flex items-center justify-center rounded-full overflow-hidden p-3 border border-white/10">
+                           <img src="https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg" alt="Outlook Calendar" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="text-right">
+                          <h4 className="text-lg font-black text-white">Outlook Calendar</h4>
+                          <p className="text-xs text-slate-500 font-bold">مزامنة المواعيد مع Outlook (قريباً في المرحلة القادمة).</p>
+                        </div>
+                      </div>
+                      <button disabled className="bg-white/5 text-slate-600 px-8 py-3 font-black text-[10px] uppercase tracking-widest cursor-not-allowed">
+                        غير متوفر
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'database' && (
               <div className="max-w-3xl w-full mx-auto space-y-10">
                 <div className="bg-white/[0.01] border border-white/5 p-10 glass space-y-8">
@@ -765,6 +861,57 @@ export default function Settings() {
                 </div>
               </div>
             )}
+            {activeTab === 'about' && (
+              <div className="max-w-3xl w-full mx-auto space-y-10">
+                <div className="bg-white/[0.01] border border-white/5 p-10 glass space-y-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-1.5 h-full bg-brand-primary" />
+                  
+                  <div className="flex flex-col items-center text-center space-y-6">
+                    <div className="w-24 h-24 bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center text-brand-primary rounded-none shadow-[0_0_30px_rgba(74,222,128,0.1)]">
+                      <LayoutGrid size={48} />
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <h3 className="text-3xl font-display font-black text-white">O.V.9 Quantum Tracker</h3>
+                       <p className="text-brand-primary font-black uppercase tracking-[0.2em] text-xs">منصة المتابعة الاستراتيجية الموحدة</p>
+                    </div>
+
+                    <div className="py-2 px-6 bg-brand-primary/10 border border-brand-primary/20 inline-block">
+                       <span className="text-brand-primary font-black text-sm">الإصدار 1.0.0</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-8 mt-12 text-right">
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-black text-slate-100 uppercase tracking-widest border-b border-white/5 pb-2 inline-block ml-auto">عن المنصة</h4>
+                      <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                        تم تصميم وتطوير هذه المنصة لتكون المحور المركزي لإدارة المتابعة الاستراتيجية، حيث تجمع بين ذكاء البيانات وسهولة التفاعل لتوفير رؤية شاملة للمبادرات، الأهداف، والمستهدفات الاستراتيجية. تعتمد المنصة على بنية تحتية سحابية متقدمة لضمان أمان البيانات وسرعة الوصول للمعلومات في الوقت الحقيقي.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                      <div className="p-6 bg-white/5 border border-white/5 space-y-2">
+                        <h5 className="text-xs font-black text-brand-primary uppercase tracking-widest leading-loose">الهدف الاستراتيجي</h5>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">تحويل البيانات الخام إلى رؤى تفاعلية تدعم اتخاذ القرار وتسرع من وتيرة الإنجاز المؤسسي.</p>
+                      </div>
+                      <div className="p-6 bg-white/5 border border-white/5 space-y-2">
+                        <h5 className="text-xs font-black text-brand-primary uppercase tracking-widest leading-loose">التحديثات المستمرة</h5>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">تخضع المنصة لدورات تطوير مستقرة، حيث يتم توثيق كل تغيير وترقية بدقة عالية لضمان استمرارية الكفاءة.</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-10 border-t border-white/5 flex flex-col items-center">
+                       <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest mb-4">Developed with Precision for the Next Frontier</p>
+                       <div className="flex gap-4">
+                          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:text-brand-primary transition-colors cursor-pointer"><Globe size={14} /></div>
+                          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:text-brand-primary transition-colors cursor-pointer"><Shield size={14} /></div>
+                          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:text-brand-primary transition-colors cursor-pointer"><Database size={14} /></div>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -789,8 +936,12 @@ export default function Settings() {
              <p className="text-xs font-bold text-slate-300">Level 5 / Sector 0</p>
            </div>
            <div className="space-y-1">
+             <p className="text-[10px] text-slate-600 font-black uppercase">Version Control</p>
+             <p className="text-xs font-bold text-slate-300">v1.0.0</p>
+           </div>
+           <div className="space-y-1">
              <p className="text-[10px] text-slate-600 font-black uppercase">Last Revision</p>
-             <p className="text-xs font-bold text-slate-300">April 2026</p>
+             <p className="text-xs font-bold text-slate-300">May 2026</p>
            </div>
         </div>
       </div>

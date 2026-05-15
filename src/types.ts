@@ -20,6 +20,7 @@ export interface Milestone {
   title: string;
   completed: boolean;
   date: string;
+  notes?: string;
 }
 
 export interface UserSettings {
@@ -27,6 +28,7 @@ export interface UserSettings {
   darkMode: boolean;
   fontSize: 'small' | 'medium' | 'large';
   borderRadius: 'none' | 'small' | 'medium' | 'full';
+  defaultCalendarView?: 'grid' | 'agenda';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,11 +36,11 @@ type FirestoreTimestamp = any;
 
 export interface DailyReviewConfig {
   itemId: string;
-  type: 'goal' | 'plan_goal' | 'hiea' | 'project';
+  type: 'goal' | 'hiea' | 'project';
   startDate: string;
   endDate: string;
-  planId?: string; // For plan_goals
-  stageId?: string; // For plan_goals
+  planId?: string; // Legacy
+  stageId?: string; // Legacy
 }
 
 export interface UserProfile {
@@ -51,13 +53,25 @@ export interface UserProfile {
   settings?: UserSettings;
   lastCheckInDate?: string; // YYYY-MM-DD
   dailyReviewItems?: DailyReviewConfig[];
+  integrations?: {
+    googleCalendar?: {
+      linked: boolean;
+      lastSync?: string;
+      email?: string;
+    };
+    outlookCalendar?: {
+      linked: boolean;
+      lastSync?: string;
+    };
+  };
   createdAt: FirestoreTimestamp;
 }
 
 export interface PerformanceLog {
   id: string;
   value: number; // For relative: delta. For cumulative: total.
-  type?: 'relative' | 'cumulative';
+  type?: 'relative' | 'cumulative' | 'arrow';
+  indicator?: 'positive' | 'negative';
   impact?: 'positive' | 'negative';
   note: string;
   date: string;
@@ -75,6 +89,10 @@ export interface Goal {
   projectId?: string;
   category: GoalCategory;
   progress: number;
+  kpiTitle?: string;
+  kpiTarget?: number;
+  kpiCurrent?: number;
+  kpiUnit?: string;
   milestones: Milestone[];
   performanceLogs?: PerformanceLog[];
   ownerId: string;
@@ -96,6 +114,13 @@ export interface Hiea {
   createdAt: FirestoreTimestamp;
 }
 
+export interface ProjectSubGoal {
+  id: string;
+  title: string;
+  progress: number;
+  indicator?: 'positive' | 'negative' | 'stable';
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -105,44 +130,22 @@ export interface Project {
   status: ProjectStatus;
   progress: number;
   milestones: Milestone[];
+  subGoals?: ProjectSubGoal[]; 
+  challenges?: string[];
+  requiredResources?: string[];
+  priority?: 'high' | 'medium' | 'low';
   performanceLogs?: PerformanceLog[];
   hieaId?: string;
   hieaIds?: string[];
   goalId?: string;
+  kpiTitle?: string;
+  kpiTarget?: number;
+  kpiCurrent?: number;
+  kpiUnit?: string;
   tags?: string[];
   icon?: string;
-  ownerId: string;
-  createdAt: FirestoreTimestamp;
-  updatedAt?: FirestoreTimestamp;
-}
-
-export interface PlanStage {
-  id: string;
-  title: string;
-  goals: { 
-    id: string; 
-    text: string; 
-    completed: boolean;
-    kpiTitle?: string;
-    kpiTarget?: number;
-    kpiCurrent?: number;
-    kpiUnit?: string;
-  }[];
-  startDate: string;
-  endDate: string;
-  status: 'pending' | 'in-progress' | 'completed';
-}
-
-export interface Plan {
-  id: string;
-  hieaId?: string; // Optional for general plans
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  stages: PlanStage[];
-  performanceIndicator: number; // User-input target/result
-  progress: number; // Calculated progress from goals (0-100)
+  color?: string;
+  dependencies?: string[];
   ownerId: string;
   createdAt: FirestoreTimestamp;
   updatedAt?: FirestoreTimestamp;
@@ -155,10 +158,53 @@ export interface Conference {
   endDate: string;
   location: string;
   hieaId?: string;
+  hieaIds?: string[];
   projectId?: string;
   goalId?: string;
   description: string;
   agenda?: string;
   ownerId: string;
   createdAt: FirestoreTimestamp;
+}
+
+export interface StrategicUpdate {
+  id: string;
+  title: string;
+  content: string;
+  type: 'milestone' | 'goal' | 'project' | 'general';
+  entityId: string;
+  entityName: string;
+  icon?: string;
+  ownerId: string;
+  createdAt: FirestoreTimestamp;
+}
+
+export interface Transaction {
+  id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  date: string;
+  category: 'cash' | 'digital';
+  ownerId: string;
+  createdAt: FirestoreTimestamp;
+}
+
+export interface WishlistItem {
+  id: string;
+  name: string;
+  price: number;
+  isBought: boolean;
+  status: 'desire' | 'bought';
+  ownerId: string;
+  createdAt: FirestoreTimestamp;
+}
+
+export interface Budget {
+  id: string;
+  total: number;
+  cash: number;
+  digital: number;
+  ownerId: string;
+  updatedAt: FirestoreTimestamp;
 }

@@ -8,38 +8,59 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Goal, Hiea, Project, Conference, Plan } from '../types';
+import { Goal, Hiea, Project, Conference, StrategicUpdate, Budget, WishlistItem, Transaction } from '../types';
+import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
-export function usePlans() {
-  const [plans, setPlans] = useState<Plan[]>([]);
+export function useFinance() {
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
     if (!user) return;
-    
-    const q = query(
-      collection(db, 'plans'), 
-      where('ownerId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
 
-    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data({ serverTimestamps: 'estimate' }) 
-      })) as Plan[];
-      setPlans(data);
-      setLoading(false);
+    // Budget
+    const qBudget = query(collection(db, 'budgets'), where('ownerId', '==', user.uid));
+    const unsubBudget = onSnapshot(qBudget, (snapshot) => {
+      if (!snapshot.empty) {
+        setBudget({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Budget);
+      } else {
+        setBudget(null);
+      }
     }, (error) => {
-      console.error("Error fetching plans:", error);
+      handleFirestoreError(error, OperationType.LIST, 'budgets');
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Wishlist
+    const qWishlist = query(collection(db, 'wishlist'), where('ownerId', '==', user.uid), orderBy('createdAt', 'desc'));
+    const unsubWishlist = onSnapshot(qWishlist, (snapshot) => {
+      setWishlist(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as WishlistItem[]);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'wishlist');
+      setLoading(false);
+    });
+
+    // Transactions
+    const qTransactions = query(collection(db, 'transactions'), where('ownerId', '==', user.uid), orderBy('createdAt', 'desc'));
+    const unsubTransactions = onSnapshot(qTransactions, (snapshot) => {
+      setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Transaction[]);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'transactions');
+      setLoading(false);
+    });
+
+    return () => {
+      unsubBudget();
+      unsubWishlist();
+      unsubTransactions();
+    };
   }, [user]);
 
-  return { plans, loading };
+  return { budget, wishlist, transactions, loading };
 }
 
 export function useGoals() {
@@ -64,7 +85,7 @@ export function useGoals() {
       setGoals(data);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching goals:", error);
+      handleFirestoreError(error, OperationType.LIST, 'goals');
       setLoading(false);
     });
 
@@ -96,7 +117,7 @@ export function useHieas() {
       setHieas(data);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching hieas:", error);
+      handleFirestoreError(error, OperationType.LIST, 'hieas');
       setLoading(false);
     });
 
@@ -128,7 +149,7 @@ export function useProjects() {
       setProjects(data);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching projects:", error);
+      handleFirestoreError(error, OperationType.LIST, 'projects');
       setLoading(false);
     });
 
@@ -160,7 +181,7 @@ export function useConferences() {
       setConferences(data);
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching conferences:", error);
+      handleFirestoreError(error, OperationType.LIST, 'conferences');
       setLoading(false);
     });
 
@@ -168,4 +189,36 @@ export function useConferences() {
   }, [user]);
 
   return { conferences, loading };
+}
+
+export function useStrategicUpdates() {
+  const [updates, setUpdates] = useState<StrategicUpdate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const q = query(
+      collection(db, 'strategic_updates'), 
+      where('ownerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data({ serverTimestamps: 'estimate' }) 
+      })) as StrategicUpdate[];
+      setUpdates(data);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'strategic_updates');
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  return { updates, loading };
 }

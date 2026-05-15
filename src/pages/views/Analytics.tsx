@@ -36,7 +36,7 @@ import {
   Palette,
   Eye
 } from 'lucide-react';
-import { useGoals, useHieas, useProjects, useConferences, usePlans } from '../../hooks/useData';
+import { useGoals, useHieas, useProjects, useConferences } from '../../hooks/useData';
 import { ProjectStatus, GoalType } from '../../types';
 
 type ChartType = 'bar' | 'pie' | 'area' | 'line';
@@ -47,7 +47,6 @@ export default function Analytics() {
   const { hieas, loading: hieasLoading } = useHieas();
   const { projects, loading: projectsLoading } = useProjects();
   const { conferences, loading: conferencesLoading } = useConferences();
-  const { plans, loading: plansLoading } = usePlans();
 
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +63,7 @@ export default function Analytics() {
 
   const [chartRadius, setChartRadius] = useState(60);
 
-  const isLoading = goalsLoading || hieasLoading || projectsLoading || conferencesLoading || plansLoading;
+  const isLoading = goalsLoading || hieasLoading || projectsLoading || conferencesLoading;
 
   // Data Preparation Logic
   const chartData = useMemo(() => {
@@ -109,7 +108,7 @@ export default function Analytics() {
         // Aggregate performance as average progress over time
         const monthlyData: Record<string, { total: number, count: number }> = {};
         
-        const allItems = [...projects, ...goals, ...hieas, ...plans];
+        const allItems = [...projects, ...goals, ...hieas];
         
         allItems.forEach(item => {
           if (item.performanceLogs && item.performanceLogs.length > 0) {
@@ -319,7 +318,7 @@ export default function Analytics() {
         <div className="bg-[#0a0a0b] border border-white/10 p-4 shadow-2xl rounded-xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 border-b border-white/5 pb-1">{label}</p>
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {payload.map((p: any, i: number) => (
+          {(payload || []).map((p: any, i: number) => (
             <div key={i} className="flex items-center gap-3">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
               <span className="text-xs font-bold text-white">{p.value}{isPercentage ? '%' : ''} {activeMetric === 'projects_status' ? 'مشروع' : ''}</span>
