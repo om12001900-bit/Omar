@@ -2,5 +2,5 @@
   "name": "O.V.9 - منصة إدارة الرؤية",
   "description": "منصة استراتيجية متطورة لإدارة الرؤية والأهداف مبنية على Firebase مع دعم كامل لخصائص PWA والعمل على مختلف الأجهزة.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

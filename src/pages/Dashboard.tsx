@@ -31,6 +31,8 @@ import Finance from './views/Finance';
 
 import { Logo } from '../components/Logo';
 import { InstallPWA } from '../components/InstallPWA';
+import DailyWizard from '../components/DailyWizard';
+import VisionAdvisor from '../components/VisionAdvisor';
 
 export default function Dashboard() {
   const { profile, signOut } = useAuth();
@@ -381,6 +383,9 @@ export default function Dashboard() {
           </AnimatePresence>
         </div>
       </main>
+
+      <DailyWizard />
+      <VisionAdvisor />
 
       {/* 4. Mobile Bottom Navigation (Ease of access) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#020617]/95 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-2 z-[50]">

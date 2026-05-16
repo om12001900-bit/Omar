@@ -358,8 +358,8 @@ export default function Finance() {
             <div className={`absolute inset-0 bg-${stat.color}/5 blur-2xl group-hover:bg-${stat.color}/10 transition-colors duration-500`} />
             <div className="relative bg-[#0a0a0b]/80 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-3xl group-hover:border-white/10 transition-all duration-500">
               <div className="flex items-center justify-between mb-6">
-                <div className={`p-4 bg-${stat.color}/10 rounded-2xlt shadow-inner`}>
-                  <stat.icon className={`text-${stat.color}`} size={24} />
+                <div className={`p-4 bg-brand-primary/10 rounded-2xl shadow-inner`}>
+                  <stat.icon className={`text-brand-primary`} size={24} />
                 </div>
                 <span className={`text-[10px] font-black uppercase tracking-[0.2em] text-${stat.color}/80`}>{stat.label}</span>
               </div>

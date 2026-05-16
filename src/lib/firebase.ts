@@ -1,14 +1,31 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
+// Connectivity Test (as per guidelines)
+async function testConnection() {
+  try {
+    console.log("Testing Firestore connection to database:", firebaseConfig.firestoreDatabaseId);
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log("Firestore connection test completed.");
+  } catch (error: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const err = error as any;
+    console.error("Firestore connectivity check failed:", err.code, err.message);
+    if (err.code === 'unavailable') {
+      console.warn("Firestore backend is currently unavailable. This might be a temporary network issue or the database might still be provisioning.");
+    }
+  }
+}
+testConnection();
+
 // Versioning Logic
-import { doc, getDoc, setDoc, increment, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getDoc, setDoc, increment, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export async function incrementPlatformVersion(description: string = 'تحديث النظام') {
   const versionDocRef = doc(db, 'settings', 'system');

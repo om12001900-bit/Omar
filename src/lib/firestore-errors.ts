@@ -27,8 +27,13 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const code = (error as any)?.code;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const message = (error as any)?.message || String(error);
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: message,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -45,5 +50,11 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   }
   const jsonError = JSON.stringify(errInfo);
   console.error('Firestore Error: ', jsonError);
-  throw new Error(jsonError);
+
+  // ONLY throw if it's a permission denied error as per guidelines,
+  // or if it's a critical error we want to catch in the ErrorBoundary.
+  // We avoid throwing for 'unavailable' to prevent total UI blackout during transient network issues.
+  if (code === 'permission-denied') {
+    throw new Error(jsonError);
+  }
 }
