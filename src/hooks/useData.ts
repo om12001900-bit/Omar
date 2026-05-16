@@ -232,8 +232,14 @@ export function useVersion() {
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'settings', 'system'), (snapshot) => {
       if (snapshot.exists()) {
-        setVersion(snapshot.data().version);
+        const data = snapshot.data();
+        if (typeof data.version === 'number') {
+          setVersion(data.version);
+        }
       }
+      setLoading(false);
+    }, (error) => {
+      console.error("Version fetch error:", error);
       setLoading(false);
     });
     return () => unsub();
@@ -256,8 +262,11 @@ export function useChangelog() {
       const logData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as ChangelogLog[];
       setLogs(logData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Changelog fetch error:", error);
       setLoading(false);
     });
     return () => unsub();

@@ -25,7 +25,7 @@ export default function Settings() {
   const { projects } = useProjects();
   const { goals } = useGoals();
   const { conferences } = useConferences();
-  const { version } = useVersion();
+  const { version, loading: versionLoading } = useVersion();
   const { logs } = useChangelog();
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -37,6 +37,8 @@ export default function Settings() {
   React.useEffect(() => {
     // Check if we already bumped to 1.03 to avoid multiple increments
     const checkVersionBump = async () => {
+      if (!user || versionLoading || version === undefined || version === null) return;
+      
       const hasBumped = localStorage.getItem('v1.03_bumped');
       if (!hasBumped && version < 1.03) {
         await incrementPlatformVersion('تحديث واجهة الهيئات وتطوير سجل التغييرات الاستراتيجي');
@@ -44,7 +46,7 @@ export default function Settings() {
       }
     };
     checkVersionBump();
-  }, [version]);
+  }, [version, versionLoading, user]);
 
   const [formData, setFormData] = useState({
     displayName: profile?.displayName || 'مستخدم تجريبي',
@@ -131,7 +133,7 @@ export default function Settings() {
       conferences,
       timestamp: new Date().toISOString(),
       system: 'O.V.9 Quantum Tracker',
-      version: version.toFixed(2)
+      version: (version || 1.00).toFixed(2)
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -926,7 +928,7 @@ export default function Settings() {
                        <div className="absolute inset-0 bg-brand-primary/5 -translate-x-full group-hover:translate-x-0 transition-transform duration-1000" />
                        <span className="text-brand-primary font-black text-[10px] uppercase tracking-[0.2em] relative z-10 flex items-center gap-2">
                           <div className="w-1.5 h-1.5 bg-brand-primary animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
-                          Strategic Release v{version.toFixed(2)}
+                          Strategic Release v{(version || 1.00).toFixed(2)}
                        </span>
                     </div>
                   </div>
@@ -958,7 +960,7 @@ export default function Settings() {
                           <div key={log.id} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5">
                             <div className="flex items-center gap-4">
                               <span className="text-[10px] font-black text-brand-primary px-2 py-1 bg-brand-primary/10 border border-brand-primary/20">
-                                v{parseFloat(log.version).toFixed(2)}
+                                v{parseFloat(log.version || '1.00').toFixed(2)}
                               </span>
                               <span className="text-xs text-slate-300 font-medium">{log.description}</span>
                             </div>
@@ -1007,7 +1009,7 @@ export default function Settings() {
            </div>
            <div className="space-y-1">
              <p className="text-[10px] text-slate-600 font-black uppercase">Version Control</p>
-             <p className="text-xs font-bold text-slate-300">v{version.toFixed(2)}</p>
+             <p className="text-xs font-bold text-slate-300">v{(version || 1.00).toFixed(2)}</p>
            </div>
            <div className="space-y-1">
              <p className="text-[10px] text-slate-600 font-black uppercase">Last Revision</p>
